@@ -164,11 +164,11 @@ export default function ReportsPage() {
         sameMonthReport?.weekly_target ??
         monthGoal?.weekly_target ??
         kpi.weekly_target ??
-        ''
+        null
 
       if (existingReport) {
         newFormData[kpi.id] = {
-          weekly_target: initialWeeklyTarget !== '' ? String(initialWeeklyTarget) : '',
+          weekly_target: initialWeeklyTarget != null ? String(initialWeeklyTarget) : '',
           weekly_achievement: existingReport.weekly_achievement != null ? String(existingReport.weekly_achievement) : '',
           strategy: existingReport.strategy || '',
           plan: existingReport.plan || '',
@@ -181,7 +181,7 @@ export default function ReportsPage() {
         }
       } else {
         const batchForm = createEmptyBatchForm()
-        batchForm.weekly_target = initialWeeklyTarget !== '' ? String(initialWeeklyTarget) : ''
+        batchForm.weekly_target = initialWeeklyTarget != null ? String(initialWeeklyTarget) : ''
 
         // 직전 보고서의 전략 → 이번 전략, ACTION → 이번 PLAN 자동 채움
         const prevReports = reports
