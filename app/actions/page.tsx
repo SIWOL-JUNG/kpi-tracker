@@ -14,9 +14,9 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 
 // 상태 뱃지 색상 매핑
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  open: { label: '미해결', bg: 'bg-red-100', text: 'text-red-700' },
-  in_progress: { label: '진행중', bg: 'bg-yellow-100', text: 'text-yellow-700' },
-  resolved: { label: '해결됨', bg: 'bg-green-100', text: 'text-green-700' },
+  open: { label: '미해결', bg: 'bg-red-900/30', text: 'text-red-400' },
+  in_progress: { label: '진행중', bg: 'bg-yellow-900/30', text: 'text-yellow-400' },
+  resolved: { label: '해결됨', bg: 'bg-green-900/30', text: 'text-green-400' },
 }
 
 // 장기 미해결 기준 (일)
@@ -202,15 +202,15 @@ function ActionsPage() {
       />
 
       {/* 헤더 */}
-      <div className="bg-white rounded-xl shadow border-2 border-gray-300 mb-8 overflow-hidden">
+      <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 mb-8 overflow-hidden">
         <div className="h-1 bg-blue-600" />
         <div className="p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-blue-900/30 rounded-xl flex items-center justify-center">
               <CheckSquare className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">액션 아이템 추적</h1>
+              <h1 className="text-2xl font-bold text-white">액션 아이템 추적</h1>
               <p className="text-sm text-gray-400 mt-0.5">팀별 액션 아이템 현황을 관리합니다</p>
             </div>
           </div>
@@ -226,17 +226,17 @@ function ActionsPage() {
 
       {/* 새 아이템 폼 */}
       {showForm && (
-        <div className="bg-white rounded-xl shadow border-2 border-gray-300 mb-8 overflow-hidden">
+        <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 mb-8 overflow-hidden">
           <div className="h-1 bg-blue-600" />
           <div className="p-6">
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">새 액션 아이템 추가</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">팀 선택</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">팀 선택</label>
                 <select
                   value={formTeamId}
                   onChange={(e) => setFormTeamId(e.target.value)}
-                  className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 >
                   <option value="">팀을 선택하세요</option>
                   {teams.map(t => (
@@ -245,19 +245,19 @@ function ActionsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">내용</label>
                 <textarea
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
                   placeholder="액션 아이템 내용을 입력하세요..."
                   rows={3}
-                  className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+                  className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
                 />
               </div>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => { setShowForm(false); setFormContent(''); setFormTeamId('') }}
-                  className="px-4 py-2.5 text-sm text-gray-600 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition"
+                  className="px-4 py-2.5 text-sm text-gray-300 border-2 border-gray-700 rounded-xl hover:bg-gray-700 transition"
                 >
                   취소
                 </button>
@@ -288,19 +288,19 @@ function ActionsPage() {
       {/* 팀 필터 + 상태 탭 */}
       <div className="mb-8">
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">필터</h3>
-        <div className="bg-white rounded-xl shadow border-2 border-gray-300 p-5">
+        <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 p-5">
           {/* 팀 필터 */}
           <div className="flex flex-wrap gap-2 mb-4">
             <div className="flex items-center gap-2 mr-2">
               <Filter className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium text-gray-600">팀:</span>
+              <span className="text-sm font-medium text-gray-300">팀:</span>
             </div>
             <button
               onClick={() => setSelectedTeam('')}
               className={`px-4 py-2 text-sm rounded-full border transition ${
                 selectedTeam === ''
                   ? 'bg-blue-600 text-white border-blue-600 shadow'
-                  : 'text-gray-600 border-gray-300 hover:bg-gray-50'
+                  : 'text-gray-300 border-gray-700 hover:bg-gray-700'
               }`}
             >
               전체
@@ -312,7 +312,7 @@ function ActionsPage() {
                 className={`px-4 py-2 text-sm rounded-full border transition ${
                   selectedTeam === t.id
                     ? 'bg-blue-600 text-white border-blue-600 shadow'
-                    : 'text-gray-600 border-gray-300 hover:bg-gray-50'
+                    : 'text-gray-300 border-gray-700 hover:bg-gray-700'
                 }`}
               >
                 {t.name}
@@ -324,7 +324,7 @@ function ActionsPage() {
           <div className="flex flex-wrap gap-2">
             <div className="flex items-center gap-2 mr-2">
               <CheckSquare className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium text-gray-600">상태:</span>
+              <span className="text-sm font-medium text-gray-300">상태:</span>
             </div>
             {STATUS_TABS.map(tab => (
               <button
@@ -333,7 +333,7 @@ function ActionsPage() {
                 className={`px-4 py-2 text-sm rounded-full border transition ${
                   activeStatus === tab.key
                     ? 'bg-blue-600 text-white border-blue-600 shadow'
-                    : 'text-gray-600 border-gray-300 hover:bg-gray-50'
+                    : 'text-gray-300 border-gray-700 hover:bg-gray-700'
                 }`}
               >
                 {tab.label}
@@ -351,11 +351,11 @@ function ActionsPage() {
 
         {items.length === 0 ? (
           /* 빈 상태 */
-          <div className="bg-white rounded-xl shadow border-2 border-gray-300 p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 p-12 text-center">
+            <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckSquare className="w-8 h-8 text-gray-300" />
             </div>
-            <h4 className="text-lg font-bold text-gray-500 mb-1">액션 아이템이 없습니다</h4>
+            <h4 className="text-lg font-bold text-gray-400 mb-1">액션 아이템이 없습니다</h4>
             <p className="text-sm text-gray-400">
               {selectedTeam || activeStatus
                 ? '필터 조건에 맞는 아이템이 없습니다. 필터를 변경해보세요.'
@@ -372,8 +372,8 @@ function ActionsPage() {
               return (
                 <div
                   key={item.id}
-                  className={`bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden transition ${
-                    isOverdue ? 'bg-red-50' : ''
+                  className={`bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden transition ${
+                    isOverdue ? 'bg-red-900/20' : ''
                   }`}
                 >
                   <div className="p-5">
@@ -383,12 +383,12 @@ function ActionsPage() {
                         {/* 뱃지 행 */}
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           {/* 팀 뱃지 */}
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-900/30 text-blue-400">
                             {item.team_name || '팀 미지정'}
                           </span>
                           {/* KPI 이름 */}
                           {item.kpi_name && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-300">
                               {item.kpi_name}
                             </span>
                           )}
@@ -398,7 +398,7 @@ function ActionsPage() {
                           </span>
                           {/* 장기 미해결 뱃지 */}
                           {isOverdue && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-900/30 text-red-400">
                               <AlertCircle className="w-3 h-3" />
                               장기 미해결
                             </span>
@@ -406,7 +406,7 @@ function ActionsPage() {
                         </div>
 
                         {/* 내용 */}
-                        <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
                           {item.content}
                         </p>
 
@@ -436,7 +436,7 @@ function ActionsPage() {
                         {item.status === 'open' && (
                           <button
                             onClick={() => handleStatusChange(item.id, 'in_progress')}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition"
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-yellow-400 bg-yellow-900/20 border border-yellow-200 rounded-lg hover:bg-yellow-900/30 transition"
                             title="진행중으로 변경"
                           >
                             <Play className="w-3 h-3" />
@@ -446,7 +446,7 @@ function ActionsPage() {
                         {item.status === 'open' && (
                           <button
                             onClick={() => handleStatusChange(item.id, 'resolved')}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition"
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-400 bg-green-900/20 border border-green-700 rounded-lg hover:bg-green-900/30 transition"
                             title="해결로 변경"
                           >
                             <CheckCircle className="w-3 h-3" />
@@ -456,7 +456,7 @@ function ActionsPage() {
                         {item.status === 'in_progress' && (
                           <button
                             onClick={() => handleStatusChange(item.id, 'resolved')}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition"
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-400 bg-green-900/20 border border-green-700 rounded-lg hover:bg-green-900/30 transition"
                             title="해결로 변경"
                           >
                             <CheckCircle className="w-3 h-3" />
@@ -466,7 +466,7 @@ function ActionsPage() {
                         {item.status === 'resolved' && (
                           <button
                             onClick={() => handleStatusChange(item.id, 'open')}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-400 bg-blue-900/20 border border-blue-700 rounded-lg hover:bg-blue-900/30 transition"
                             title="다시 열기"
                           >
                             <RotateCcw className="w-3 h-3" />
@@ -477,7 +477,7 @@ function ActionsPage() {
                         {/* 삭제 버튼 */}
                         <button
                           onClick={() => setDeleteTarget(item.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-900/20 rounded-lg transition"
                           title="삭제"
                         >
                           <Trash2 className="w-4 h-4" />

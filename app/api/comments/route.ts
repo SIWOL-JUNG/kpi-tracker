@@ -1,33 +1,34 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const reportId = searchParams.get('report_id')
-  const db = getDb()
 
-  if (reportId) {
-    const comments = db.prepare('SELECT * FROM comments WHERE report_id = ? ORDER BY created_at DESC').all(reportId)
-    return NextResponse.json(comments)
-  }
+  let query = supabase.from('comments').select('*').order('created_at', { ascending: false })
+  if (reportId) query = query.eq('report_id', reportId)
 
-  const comments = db.prepare('SELECT * FROM comments ORDER BY created_at DESC').all()
-  return NextResponse.json(comments)
+  const { data, error } = await query
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
 }
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const db = getDb()
-  const id = crypto.randomUUID()
-  db.prepare('INSERT INTO comments (id, report_id, author, content) VALUES (?, ?, ?, ?)').run(id, body.report_id, body.author, body.content)
-  return NextResponse.json({ id, ...body })
+  const { data, error } = await supabase.from('comments').insert([{
+    report_id: body.report_id,
+    author: body.author,
+    content: body.content,
+  }]).select().single()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
 }
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
-  const db = getDb()
-  db.prepare('DELETE FROM comments WHERE id = ?').run(id)
+  const { error } = await supabase.from('comments').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

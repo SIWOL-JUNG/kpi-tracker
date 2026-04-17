@@ -11,8 +11,8 @@ interface NotificationProps {
 // 성공/에러 토스트 알림
 export default function Notification({ type, message, onClose }: NotificationProps) {
   const styles = type === 'success'
-    ? 'bg-green-100 text-green-800 border-green-300'
-    : 'bg-red-100 text-red-800 border-red-300'
+    ? 'bg-green-900/30 text-green-400 border-green-700'
+    : 'bg-red-900/30 text-red-400 border-red-700'
 
   return (
     <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 border ${styles}`}>

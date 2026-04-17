@@ -22,8 +22,8 @@ export function TeamBarChart({ teamSummaries }: TeamBarChartProps) {
   if (data.length === 0) return null
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h4 className="text-sm font-bold text-gray-800 mb-3">팀별 평균 달성률</h4>
+    <div className="bg-gray-900 rounded-lg shadow p-4">
+      <h4 className="text-sm font-bold text-gray-200 mb-3">팀별 평균 달성률</h4>
       <ResponsiveContainer width="100%" height={Math.max(200, data.length * 40)}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -67,7 +67,7 @@ export function KpiTrendChart({ reports, selectedKpiId, kpiName }: KpiTrendChart
 
   return (
     <div>
-      <p className="text-xs text-gray-500 mb-3">{kpiName}</p>
+      <p className="text-xs text-gray-400 mb-3">{kpiName}</p>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Team, KPI, Report, Comment } from '@/types'
+import { groupKpisByCategoryProgram } from '@/lib/kpi-utils'
 import { Search, Filter, TrendingUp, TrendingDown, Minus, Calendar, BarChart3, Users, RefreshCw, Download, AlertCircle, ChevronDown, ChevronRight, MessageSquare, Edit2 } from 'lucide-react'
 import StatCard from '@/components/StatCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -72,6 +73,7 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState<string>('')
   const [selectedChartKpi, setSelectedChartKpi] = useState<string>('')
   const [dashboardTeam, setDashboardTeam] = useState<string>('')
+  const [detailDate, setDetailDate] = useState<string>('')
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [comments, setComments] = useState<Record<string, Comment[]>>({})
   const [commentForm, setCommentForm] = useState<{author: string, content: string}>({author: '', content: ''})
@@ -80,16 +82,8 @@ export default function Dashboard() {
   useEffect(() => {
     fetchTeams()
     fetchKpis()
-    // 기본: 이번 달 데이터
-    const range = getDateRange('this_month')
-    setStartDate(range.start)
-    setEndDate(range.end)
-    setActivePreset('this_month')
-  }, [])
-
-  useEffect(() => {
     fetchReports()
-  }, [selectedTeam, startDate, endDate])
+  }, [])
 
   const fetchTeams = async () => {
     try {
@@ -112,12 +106,7 @@ export default function Dashboard() {
   const fetchReports = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams()
-      if (selectedTeam) params.set('team_id', selectedTeam)
-      if (startDate) params.set('start_date', startDate)
-      if (endDate) params.set('end_date', endDate)
-
-      const data = await fetch(`/api/reports?${params}`).then(r => r.json())
+      const data = await fetch('/api/reports?limit=500').then(r => r.json())
       if (data) {
         setReports(data as Report[])
         setLastUpdate(new Date().toLocaleString('ko-KR'))
@@ -147,9 +136,9 @@ export default function Dashboard() {
   // 통계
   const getAchievementStatus = (rate: number | undefined) => {
     const r = rate || 0
-    if (r >= 100) return { icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-100', border: 'border-green-300', label: '달성' }
-    if (r >= 70) return { icon: Minus, color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-300', label: '진행중' }
-    return { icon: TrendingDown, color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-300', label: '미달성' }
+    if (r >= 100) return { icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-900/30', border: 'border-green-700', label: '달성' }
+    if (r >= 70) return { icon: Minus, color: 'text-yellow-600', bg: 'bg-yellow-900/30', border: 'border-yellow-300', label: '진행중' }
+    return { icon: TrendingDown, color: 'text-red-600', bg: 'bg-red-900/30', border: 'border-red-700', label: '미달성' }
   }
 
   const totalKPI = reports.length
@@ -162,6 +151,9 @@ export default function Dashboard() {
   const avgAchievement = totalKPI > 0
     ? (reports.reduce((sum, r) => sum + (r.monthly_achievement_rate || 0), 0) / totalKPI).toFixed(1)
     : '0'
+
+  // 보고일자 목록 (드롭다운용)
+  const reportDates = [...new Set(reports.map(r => r.report_date))].sort().reverse()
 
   // 팀별 요약
   const groupedReports = reports.reduce((acc: Record<string, Report[]>, report) => {
@@ -203,9 +195,13 @@ export default function Dashboard() {
 
   // CSV 내보내기
   const exportCSV = () => {
-    const headers = ['팀', 'KPI', '보고일', '월간목표', '주간목표', '주간달성', '주간달성률', '월간누적', '월간달성률', '전략', 'PLAN', 'DO', 'CHECK', 'ACTION', '해결과제']
-    const rows = reports.map(r => [
+    const headers = ['팀', '카테고리', '프로그램', 'KPI', '보고일', '월간목표', '주간목표', '주간달성', '주간달성률', '월간누적', '월간달성률', '전략', 'PLAN', 'DO', 'CHECK', 'ACTION', '해결과제']
+    const rows = reports.map(r => {
+      const kpi = kpis.find(k => k.id === r.kpi_id)
+      return [
       r.team_name || '',
+      kpi?.category || '',
+      kpi?.program || '',
       r.kpi_name || '',
       r.report_date,
       r.monthly_target ?? '',
@@ -220,7 +216,7 @@ export default function Dashboard() {
       r.check_result || '',
       r.action || '',
       r.issue || '',
-    ])
+    ]})
 
     const csvContent = '\uFEFF' + [headers, ...rows].map(row =>
       row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
@@ -245,10 +241,10 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6">
       {/* 헤더 - 파란색 상단 악센트 */}
-      <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden mb-8">
+      <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden mb-8">
         <div className="h-1 bg-blue-600"></div>
         <div className="p-5">
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">KPI 보고 대시보드</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">KPI 보고 대시보드</h2>
           <p className="text-gray-400 text-sm">팀별 KPI 달성 현황을 확인하세요</p>
         </div>
       </div>
@@ -259,7 +255,7 @@ export default function Dashboard() {
           onClick={() => setDashView('team')}
           className={dashView === 'team'
             ? 'bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium'
-            : 'bg-white text-gray-600 border-2 border-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50'}
+            : 'bg-gray-900 text-gray-300 border-2 border-gray-700 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-700'}
         >
           팀장 뷰
         </button>
@@ -267,7 +263,7 @@ export default function Dashboard() {
           onClick={() => setDashView('ceo')}
           className={dashView === 'ceo'
             ? 'bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium'
-            : 'bg-white text-gray-600 border-2 border-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50'}
+            : 'bg-gray-900 text-gray-300 border-2 border-gray-700 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-700'}
         >
           CEO 브리핑
         </button>
@@ -275,7 +271,7 @@ export default function Dashboard() {
           onClick={() => setDashView('actions')}
           className={dashView === 'actions'
             ? 'bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium'
-            : 'bg-white text-gray-600 border-2 border-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50'}
+            : 'bg-gray-900 text-gray-300 border-2 border-gray-700 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-700'}
         >
           액션 추적
         </button>
@@ -304,16 +300,16 @@ export default function Dashboard() {
 
       {/* 미제출 팀 경고 */}
       {missingTeams.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-8">
+        <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 mb-8">
           <div className="flex items-center gap-2 mb-2">
             <AlertCircle className="w-5 h-5 text-red-600" />
-            <h4 className="font-bold text-red-800 text-base">미제출 팀 ({missingTeams.length})</h4>
+            <h4 className="font-bold text-red-400 text-base">미제출 팀 ({missingTeams.length})</h4>
           </div>
           <div className="flex flex-wrap gap-2">
             {missingTeams.map(t => {
               const missing = getTeamMissingKpis(t.id)
               return (
-                <span key={t.id} className="bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                <span key={t.id} className="bg-red-900/30 text-red-400 px-3 py-1.5 rounded-full text-sm font-medium">
                   {t.name} ({missing.length}개 KPI 미제출)
                 </span>
               )
@@ -322,76 +318,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 필터 - 섹션 라벨 추가 */}
-      <div className="mb-8">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">필터 & 검색</h3>
-        <div className="bg-white rounded-xl shadow border-2 border-gray-300 p-5">
-          {/* 빠른 필터 */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {PRESETS.map(p => (
-              <button
-                key={p.key}
-                onClick={() => applyPreset(p.key)}
-                className={`px-4 py-2 text-sm rounded-full border transition ${
-                  activePreset === p.key
-                    ? 'bg-blue-600 text-white border-blue-600 shadow'
-                    : 'text-gray-600 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <span className="font-medium text-gray-600 text-sm">필터:</span>
-            </div>
-
-            <select
-              value={selectedTeam}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              className="border rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none flex-1 md:flex-none md:w-40"
-            >
-              <option value="">전체 팀</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-400">기간</span>
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setActivePreset('') }}
-                className="border rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-36" />
-              <span className="text-gray-400">~</span>
-              <input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setActivePreset('') }}
-                className="border rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-36" />
-            </div>
-
-            <button onClick={clearFilters}
-              className="px-4 py-2.5 text-sm text-gray-600 hover:text-gray-900 border rounded-xl hover:bg-gray-50">
-              초기화
-            </button>
-
-            <div className="flex gap-2 ml-auto">
-              <button onClick={exportCSV}
-                className="px-4 py-2.5 text-sm text-green-600 hover:text-green-800 border border-green-200 rounded-xl hover:bg-green-50 hover:shadow flex items-center gap-1 transition">
-                <Download className="w-4 h-4" /> CSV
-              </button>
-              <button onClick={fetchReports}
-                className="px-4 py-2.5 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-xl hover:bg-blue-50 hover:shadow flex items-center gap-1 transition">
-                <RefreshCw className="w-4 h-4" /> 새로고침
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-2 text-xs text-gray-400">
-            마지막 업데이트: {lastUpdate}
-          </div>
-        </div>
-      </div>
+      {/* 필터는 팀별 상세 영역에 통합됨 */}
 
       {/* 팀별 요약 카드 - 섹션 라벨 추가 */}
       {teamSummaries.length > 0 && (
@@ -401,9 +328,9 @@ export default function Dashboard() {
             {teamSummaries.map((summary) => {
               const StatusIcon = summary.status.icon
               return (
-                <div key={summary.name} className={`bg-white rounded-xl shadow p-5 border ${summary.status.border}`}>
+                <div key={summary.name} className={`bg-gray-900 rounded-xl shadow p-5 border ${summary.status.border}`}>
                   <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-gray-900 text-base">{summary.name}</h4>
+                    <h4 className="font-bold text-white text-base">{summary.name}</h4>
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${summary.status.bg} ${summary.status.color}`}>
                       <StatusIcon className="w-3 h-3" />
                       {summary.status.label}
@@ -425,23 +352,33 @@ export default function Dashboard() {
       {teamSummaries.length > 0 && (
         <div className="mb-8">
           <div className="mb-3">
-            <h3 className="text-base font-bold text-gray-900">성과 분석 차트</h3>
+            <h3 className="text-base font-bold text-white">성과 분석 차트</h3>
             <p className="text-sm text-gray-400">팀별 달성률 비교와 개별 KPI 추이를 확인하세요</p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TeamBarChart teamSummaries={teamSummaries} />
-            <div className="bg-white rounded-xl shadow border-2 border-gray-300 p-5">
+            <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 p-5">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold text-gray-900">KPI 추이 차트</h4>
+                <h4 className="text-sm font-bold text-white">KPI 추이 차트</h4>
                 <select
                   value={selectedChartKpi}
                   onChange={(e) => setSelectedChartKpi(e.target.value)}
-                  className="border rounded-xl px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 outline-none max-w-[200px]"
+                  className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none max-w-[200px]"
                 >
                   <option value="">KPI 선택</option>
-                  {kpis.map(k => (
-                    <option key={k.id} value={k.id}>{k.name}</option>
-                  ))}
+                  {(() => {
+                    const groups = groupKpisByCategoryProgram(kpis)
+                    return groups.map((g, i) => {
+                      const label = [g.category, g.program].filter(Boolean).join(' > ') || '미분류'
+                      return (
+                        <optgroup key={i} label={label}>
+                          {g.kpis.map(k => (
+                            <option key={k.id} value={k.id}>{k.name}</option>
+                          ))}
+                        </optgroup>
+                      )
+                    })
+                  })()}
                 </select>
               </div>
               {selectedChartKpi ? (
@@ -460,18 +397,38 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 팀 선택 + 상세 보고서 */}
-      <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden mb-8">
-        <div className="h-1 bg-gray-300"></div>
+      {/* 팀 선택 + 필터 + 상세 보고서 */}
+      <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden mb-8">
+        <div className="h-1 bg-blue-600"></div>
         <div className="p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <h3 className="text-sm font-bold text-gray-600">팀별 상세 보기</h3>
+          {/* 일자 선택 + CSV + 새로고침 */}
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <select
+              value={detailDate}
+              onChange={(e) => setDetailDate(e.target.value)}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white outline-none"
+            >
+              <option value="">전체 일자</option>
+              {reportDates.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            <div className="flex items-center gap-2 ml-auto">
+              <button onClick={exportCSV} className="px-3 py-1.5 text-xs text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-700 flex items-center gap-1">
+                <Download className="w-3 h-3" /> CSV
+              </button>
+              <button onClick={fetchReports} className="px-3 py-1.5 text-xs text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-700 flex items-center gap-1">
+                <RefreshCw className="w-3 h-3" /> 새로고침
+              </button>
+            </div>
           </div>
+          {/* 팀 선택 */}
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setDashboardTeam('')}
               className={`px-4 py-2.5 rounded-xl text-sm font-medium transition border ${
-                !dashboardTeam ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+                !dashboardTeam ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-300 border-gray-700 hover:bg-gray-700'
               }`}
             >
               전체
@@ -483,13 +440,13 @@ export default function Dashboard() {
                   key={t.id}
                   onClick={() => setDashboardTeam(t.id)}
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium transition border inline-flex items-center gap-1.5 ${
-                    dashboardTeam === t.id ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+                    dashboardTeam === t.id ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-300 border-gray-700 hover:bg-gray-700'
                   }`}
                 >
                   {t.name}
                   {kpiCount > 0 && (
                     <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold ${
-                      dashboardTeam === t.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-400'
+                      dashboardTeam === t.id ? 'bg-blue-900/200 text-white' : 'bg-gray-800 text-gray-400'
                     }`}>
                       {kpiCount}
                     </span>
@@ -503,12 +460,13 @@ export default function Dashboard() {
 
       {/* KPI 보고서 테이블 (회의용 뷰) */}
       {(() => {
-        const filtered = dashboardTeam ? reports.filter(r => r.team_id === dashboardTeam) : reports
+        let filtered = dashboardTeam ? reports.filter(r => r.team_id === dashboardTeam) : reports
+        if (detailDate) filtered = filtered.filter(r => r.report_date === detailDate)
         if (filtered.length === 0 && !loading) {
           return (
-            <div className="bg-white rounded-xl shadow border-2 border-gray-300 p-16 text-center">
+            <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 p-16 text-center">
               <Search className="w-20 h-20 text-gray-200 mx-auto mb-5" />
-              <p className="text-gray-500 text-xl font-medium mb-2">데이터가 없습니다</p>
+              <p className="text-gray-400 text-xl font-medium mb-2">데이터가 없습니다</p>
               <p className="text-gray-400 text-sm">조건을 변경하거나 보고서를 입력해주세요</p>
             </div>
           )
@@ -530,26 +488,28 @@ export default function Dashboard() {
         }
 
         return (
-          <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+          <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
             {/* 테이블 상단 악센트 바 */}
             <div className="h-1 bg-blue-600"></div>
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[calc(100vh-280px)]">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-100 border-b border-gray-200">
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-8"></th>
-                    {!dashboardTeam && <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">팀</th>}
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">KPI</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">보고일</th>
-                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">월간목표</th>
-                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">주간달성</th>
-                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">월간누적</th>
-                    <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">주간달성률</th>
-                    <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">월간달성률</th>
-                    <th className="px-2 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-16"></th>
+                  <tr className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700">
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-8 bg-gray-800"></th>
+                    {!dashboardTeam && <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-800">팀</th>}
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell bg-gray-800">분류</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-800">KPI</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell bg-gray-800">보고일</th>
+                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-800">월간목표</th>
+                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell bg-gray-800">주간목표</th>
+                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell bg-gray-800">주간달성</th>
+                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell bg-gray-800">월간누적</th>
+                    <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell bg-gray-800">주간달성률</th>
+                    <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-800">월간달성률</th>
+                    <th className="px-2 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider w-16 bg-gray-800"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-300">
+                <tbody className="divide-y divide-gray-700">
                   {filtered.map((report) => {
                     const status = getAchievementStatus(report.monthly_achievement_rate)
                     const StatusIcon = status.icon
@@ -570,7 +530,7 @@ export default function Dashboard() {
                       <React.Fragment key={report.id}>
                         {/* 데이터 행 */}
                         <tr
-                          className={`cursor-pointer transition hover:bg-blue-50/40 ${isExpanded ? 'bg-blue-50/30' : ''}`}
+                          className={`cursor-pointer transition hover:bg-blue-900/20/40 ${isExpanded ? 'bg-blue-900/20/30' : ''}`}
                           onClick={() => toggleRow(report.id)}
                         >
                           <td className="px-4 py-4">
@@ -588,6 +548,17 @@ export default function Dashboard() {
                               </span>
                             </td>
                           )}
+                          <td className="px-4 py-4 hidden lg:table-cell">
+                            {(() => {
+                              const kpi = kpis.find(k => k.id === report.kpi_id)
+                              return kpi?.category ? (
+                                <div className="text-xs">
+                                  <span className="text-blue-400">{kpi.category}</span>
+                                  {kpi.program && <span className="text-gray-500 block">{kpi.program}</span>}
+                                </div>
+                              ) : null
+                            })()}
+                          </td>
                           <td className="px-4 py-4">
                             <Link
                               href={`/history?team=${report.team_id}&kpi=${report.kpi_id}`}
@@ -598,15 +569,16 @@ export default function Dashboard() {
                             </Link>
                             <p className="text-xs text-gray-400 md:hidden mt-0.5">{report.report_date}</p>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-600 hidden md:table-cell">{report.report_date}</td>
-                          <td className="px-4 py-4 text-right text-sm text-gray-600">{report.monthly_target?.toLocaleString() || '-'}</td>
+                          <td className="px-4 py-4 text-sm text-gray-300 hidden md:table-cell">{report.report_date}</td>
+                          <td className="px-4 py-4 text-right text-sm text-gray-300">{report.monthly_target?.toLocaleString() || '-'}</td>
+                          <td className="px-4 py-4 text-right text-sm text-gray-300 hidden sm:table-cell">{report.weekly_target?.toLocaleString() || '-'}</td>
                           <td className="px-4 py-4 text-right text-sm font-medium text-blue-600 hidden sm:table-cell">{report.weekly_achievement?.toLocaleString() || '-'}</td>
-                          <td className="px-4 py-4 text-right text-sm text-gray-600 hidden md:table-cell">{report.monthly_cumulative?.toLocaleString() || '-'}</td>
+                          <td className="px-4 py-4 text-right text-sm text-gray-300 hidden md:table-cell">{report.monthly_cumulative?.toLocaleString() || '-'}</td>
                           {/* 주간달성률 */}
                           <td className="px-4 py-4 text-center hidden sm:table-cell">
                             {report.weekly_achievement_rate != null ? (
                               <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                                (report.weekly_achievement_rate || 0) >= 100 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                (report.weekly_achievement_rate || 0) >= 100 ? 'bg-green-900/30 text-green-600' : 'bg-red-900/30 text-red-600'
                               }`}>
                                 {(report.weekly_achievement_rate || 0) >= 100 ? '달성' : '미달성'} {report.weekly_achievement_rate?.toFixed(1)}%
                               </span>
@@ -628,7 +600,7 @@ export default function Dashboard() {
                             <Link
                               href={`/reports?edit=${report.id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg inline-flex items-center gap-1 text-xs"
+                              className="text-blue-600 hover:bg-blue-900/20 p-2 rounded-lg inline-flex items-center gap-1 text-xs"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                               <span className="hidden md:inline">수정</span>
@@ -639,7 +611,7 @@ export default function Dashboard() {
                         {/* PDCA 펼침 행 + 코멘트 */}
                         {isExpanded && (
                           <tr>
-                            <td colSpan={dashboardTeam ? 9 : 10} className="px-4 py-5 bg-gray-100">
+                            <td colSpan={dashboardTeam ? 10 : 11} className="px-4 py-5 bg-gray-800">
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 ml-8">
                                 {[
                                   { label: '전략', value: report.strategy },
@@ -650,26 +622,26 @@ export default function Dashboard() {
                                   { label: '해결과제', value: report.issue },
                                   { label: '필요한 도움', value: report.help_needed },
                                 ].map(({ label, value }) => (
-                                  <div key={label} className={`bg-white rounded-xl border-2 border-gray-300 shadow p-4 ${PDCA_TOP_BORDER[label] || ''}`}>
-                                    <p className="text-xs font-semibold text-gray-500 mb-1.5">{label}</p>
-                                    <p className={`text-sm whitespace-pre-wrap ${value ? 'text-gray-900' : 'text-gray-300 italic'}`}>{value || '미작성'}</p>
+                                  <div key={label} className={`bg-gray-900 rounded-xl border-2 border-gray-700 shadow p-4 ${PDCA_TOP_BORDER[label] || ''}`}>
+                                    <p className="text-xs font-semibold text-gray-400 mb-1.5">{label}</p>
+                                    <p className={`text-sm whitespace-pre-wrap ${value ? 'text-white' : 'text-gray-300 italic'}`}>{value || '미작성'}</p>
                                   </div>
                                 ))}
                               </div>
 
                               {/* 코멘트 섹션 */}
-                              <div className="mt-4 pt-4 border-t-2 border-gray-300 ml-8">
-                                <h4 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
+                              <div className="mt-4 pt-4 border-t-2 border-gray-700 ml-8">
+                                <h4 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
                                   <MessageSquare className="w-4 h-4" />
                                   리더 코멘트
                                 </h4>
                                 {(comments[report.id] || []).map((c: Comment) => (
-                                  <div key={c.id} className="bg-blue-50 rounded-xl p-3 mb-2 border-2 border-blue-200">
+                                  <div key={c.id} className="bg-blue-900/20 rounded-xl p-3 mb-2 border-2 border-blue-700">
                                     <div className="flex justify-between items-center mb-1">
                                       <span className="text-sm font-medium text-blue-600">{c.author}</span>
                                       <span className="text-xs text-gray-400">{c.created_at?.split('T')[0] || c.created_at}</span>
                                     </div>
-                                    <p className="text-sm text-gray-900">{c.content}</p>
+                                    <p className="text-sm text-white">{c.content}</p>
                                   </div>
                                 ))}
                                 <div className="flex gap-2 mt-2">
@@ -678,7 +650,7 @@ export default function Dashboard() {
                                     value={commentForm.author}
                                     onChange={(e) => setCommentForm(prev => ({ ...prev, author: e.target.value }))}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-24"
+                                    className="border-2 border-gray-700 rounded-xl px-3 py-2 text-sm w-24 bg-gray-800 text-white"
                                   />
                                   <input
                                     placeholder="코멘트 입력..."
@@ -686,7 +658,7 @@ export default function Dashboard() {
                                     onChange={(e) => setCommentForm(prev => ({ ...prev, content: e.target.value }))}
                                     onClick={(e) => e.stopPropagation()}
                                     onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.form?.requestSubmit() }}
-                                    className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm flex-1"
+                                    className="border-2 border-gray-700 rounded-xl px-3 py-2 text-sm flex-1 bg-gray-800 text-white"
                                   />
                                   <button
                                     onClick={async (e) => {

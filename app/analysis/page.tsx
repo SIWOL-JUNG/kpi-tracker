@@ -32,7 +32,7 @@ export default function AnalysisPage() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition ${
                 tab === t.key
                   ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 border-2 border-gray-300 hover:bg-gray-50'
+                  : 'bg-gray-900 text-gray-300 border-2 border-gray-700 hover:bg-gray-700'
               }`}
             >
               <t.icon className="w-4 h-4" />

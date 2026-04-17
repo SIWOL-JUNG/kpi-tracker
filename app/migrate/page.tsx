@@ -140,12 +140,12 @@ export default function MigratePage() {
         onCancel={() => setShowResetConfirm(false)}
       />
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+      <div className="bg-gray-900 rounded-lg shadow p-6 mb-6">
+        <h2 className="text-2xl font-bold text-gray-200 mb-2 flex items-center gap-2">
           <Database className="w-6 h-6" />
           데이터 관리
         </h2>
-        <p className="text-gray-500 text-sm mb-6">샘플 데이터를 로드하거나 데이터를 초기화합니다.</p>
+        <p className="text-gray-400 text-sm mb-6">샘플 데이터를 로드하거나 데이터를 초기화합니다.</p>
 
         <button
           onClick={loadSampleData}
@@ -157,12 +157,12 @@ export default function MigratePage() {
         </button>
 
         {result && (
-          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mt-4 p-4 bg-green-900/20 border border-green-700 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Check className="w-5 h-5 text-green-600" />
-              <p className="text-green-800 font-medium text-sm">완료</p>
+              <p className="text-green-400 font-medium text-sm">완료</p>
             </div>
-            <ul className="text-green-700 text-sm space-y-1">
+            <ul className="text-green-400 text-sm space-y-1">
               <li>팀: {result.teams}개 추가</li>
               <li>KPI: {result.kpis}개 추가</li>
             </ul>
@@ -170,13 +170,13 @@ export default function MigratePage() {
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="font-bold text-red-800 mb-2 text-sm">위험 영역</h3>
-        <p className="text-gray-500 text-xs mb-3">데이터를 초기화하고 처음부터 다시 시작합니다.</p>
+      <div className="bg-gray-900 rounded-lg shadow p-6">
+        <h3 className="font-bold text-red-400 mb-2 text-sm">위험 영역</h3>
+        <p className="text-gray-400 text-xs mb-3">데이터를 초기화하고 처음부터 다시 시작합니다.</p>
         <button
           onClick={() => setShowResetConfirm(true)}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 border border-red-700 text-red-600 rounded-lg hover:bg-red-900/20 text-sm disabled:opacity-50"
         >
           <Trash2 className="w-4 h-4" />
           전체 데이터 초기화

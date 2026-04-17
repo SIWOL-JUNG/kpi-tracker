@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { Team, KPI, Report, KPIGoal } from '@/types'
+import { groupKpisByCategoryProgram } from '@/lib/kpi-utils'
 import { Save, Edit2, Trash2, RefreshCw, FileText, Target, Calendar, ChevronDown, ChevronUp, CheckCircle, AlertCircle, Users } from 'lucide-react'
 import Notification from '@/components/Notification'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -10,6 +11,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 
 // 일괄 입력 모드용 KPI별 폼 데이터 타입
 interface BatchKPIFormData {
+  weekly_target: string
   weekly_achievement: string
   strategy: string
   plan: string
@@ -23,6 +25,7 @@ interface BatchKPIFormData {
 
 // 빈 일괄 폼 데이터 생성
 const createEmptyBatchForm = (): BatchKPIFormData => ({
+  weekly_target: '',
   weekly_achievement: '',
   strategy: '',
   plan: '',
@@ -144,13 +147,28 @@ export default function ReportsPage() {
 
     const newFormData: Record<string, BatchKPIFormData> = {}
 
+    const reportMonth = batchDate.substring(0, 7)
+
     batchTeamKpis.forEach(kpi => {
       const existingReport = reports.find(
         r => r.kpi_id === kpi.id && r.report_date === batchDate
       )
 
+      // weekly_target 초기값 우선순위: 같은 날짜 보고서 → 같은 월 다른 보고서 → 월별 목표 → KPI 기본값
+      const sameMonthReport = reports.find(
+        r => r.kpi_id === kpi.id && r.report_date.substring(0, 7) === reportMonth
+      )
+      const monthGoal = kpiGoals.find(g => g.kpi_id === kpi.id && g.goal_month === reportMonth)
+      const initialWeeklyTarget =
+        existingReport?.weekly_target ??
+        sameMonthReport?.weekly_target ??
+        monthGoal?.weekly_target ??
+        kpi.weekly_target ??
+        ''
+
       if (existingReport) {
         newFormData[kpi.id] = {
+          weekly_target: initialWeeklyTarget !== '' ? String(initialWeeklyTarget) : '',
           weekly_achievement: existingReport.weekly_achievement != null ? String(existingReport.weekly_achievement) : '',
           strategy: existingReport.strategy || '',
           plan: existingReport.plan || '',
@@ -163,6 +181,7 @@ export default function ReportsPage() {
         }
       } else {
         const batchForm = createEmptyBatchForm()
+        batchForm.weekly_target = initialWeeklyTarget !== '' ? String(initialWeeklyTarget) : ''
 
         // 직전 보고서의 전략 → 이번 전략, ACTION → 이번 PLAN 자동 채움
         const prevReports = reports
@@ -199,8 +218,14 @@ export default function ReportsPage() {
     return kpi.monthly_target || 0
   }, [batchReportMonth, reports, kpiGoals])
 
-  // 일괄: KPI별 주간 목표 조회
+  // 일괄: KPI별 주간 목표 조회 (입력 폼 우선, 폴백: 같은달 보고서 → 월별 목표 → KPI 기본값)
   const batchGetWeeklyTarget = useCallback((kpi: KPI): number => {
+    const formValue = batchFormData[kpi.id]?.weekly_target
+    if (formValue !== undefined && formValue !== '') {
+      const parsed = parseFloat(formValue)
+      if (!isNaN(parsed)) return parsed
+    }
+
     if (!batchReportMonth) return kpi.weekly_target || 0
 
     const sameMonthReport = reports.find(
@@ -212,7 +237,7 @@ export default function ReportsPage() {
     if (goal) return goal.weekly_target
 
     return kpi.weekly_target || 0
-  }, [batchReportMonth, reports, kpiGoals])
+  }, [batchFormData, batchReportMonth, reports, kpiGoals])
 
   // 일괄: 월간 누적 계산
   const batchCalcMonthlyCumulative = useCallback((kpiId: string): number => {
@@ -536,9 +561,9 @@ export default function ReportsPage() {
 
   // 개별: 달성률 상태 색상 (배지용)
   const getStatusColor = (rate: number) => {
-    if (rate >= 100) return 'text-green-600 bg-green-100'
-    if (rate >= 70) return 'text-yellow-600 bg-yellow-100'
-    return 'text-red-600 bg-red-100'
+    if (rate >= 100) return 'text-green-600 bg-green-900/30'
+    if (rate >= 70) return 'text-yellow-600 bg-yellow-900/30'
+    return 'text-red-600 bg-red-900/30'
   }
 
   // 개별: PDCA 왼쪽 테두리 색상 맵
@@ -723,7 +748,7 @@ export default function ReportsPage() {
 
   // 탭 스타일
   const activeTabClass = 'bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium'
-  const inactiveTabClass = 'bg-white text-gray-600 border-2 border-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50'
+  const inactiveTabClass = 'bg-gray-900 text-gray-300 border-2 border-gray-700 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-700'
 
   return (
     <div className={mode === 'batch' ? 'max-w-4xl mx-auto p-4 pb-28' : 'max-w-7xl mx-auto p-4 md:p-6'}>
@@ -746,10 +771,10 @@ export default function ReportsPage() {
       />
 
       {/* 헤더 */}
-      <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden mb-6">
+      <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden mb-6">
         <div className="h-1 bg-blue-600"></div>
         <div className="p-5">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-white">
             {mode === 'batch'
               ? '주간 보고서 일괄 입력'
               : editingReportId
@@ -790,10 +815,10 @@ export default function ReportsPage() {
       {mode === 'batch' && (
         <>
           {/* 팀 선택 */}
-          <div className="bg-white rounded-xl border-2 border-gray-300 p-4 mb-4">
+          <div className="bg-gray-900 rounded-xl border-2 border-gray-700 p-4 mb-4">
             <div className="flex items-center gap-2 mb-3">
-              <Users className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">팀 선택</span>
+              <Users className="w-4 h-4 text-gray-400" />
+              <span className="text-sm font-medium text-gray-300">팀 선택</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {teams.map(team => (
@@ -803,7 +828,7 @@ export default function ReportsPage() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     batchTeamId === team.id
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                   }`}
                 >
                   {team.name}
@@ -813,33 +838,50 @@ export default function ReportsPage() {
           </div>
 
           {/* 보고 날짜 선택 */}
-          <div className="bg-white rounded-xl border-2 border-gray-300 p-4 mb-6">
+          <div className="bg-gray-900 rounded-xl border-2 border-gray-700 p-4 mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">보고 날짜</span>
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <span className="text-sm font-medium text-gray-300">보고 날짜</span>
             </div>
             <input
               type="date"
               value={batchDate}
               onChange={e => setBatchDate(e.target.value)}
-              className="px-4 py-2 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border-2 border-gray-700 rounded-xl text-sm bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* KPI 카드 목록 */}
           {batchTeamKpis.length === 0 ? (
-            <div className="bg-white rounded-xl border-2 border-gray-300 p-8 text-center">
+            <div className="bg-gray-900 rounded-xl border-2 border-gray-700 p-8 text-center">
               <Target className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">선택된 팀에 활성 KPI가 없습니다.</p>
+              <p className="text-gray-400">선택된 팀에 활성 KPI가 없습니다.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {batchTeamKpis.map(kpi => {
+              {(() => {
+                const groups = groupKpisByCategoryProgram(batchTeamKpis)
+                let lastCategory: string | null | undefined = undefined
+                return groups.map((group, gi) => {
+                  const showCategoryHeader = group.category && group.category !== lastCategory
+                  if (group.category) lastCategory = group.category
+                  return (
+                    <React.Fragment key={gi}>
+                      {showCategoryHeader && (
+                        <div className="px-4 py-2 bg-gray-800/70 rounded-lg border border-gray-700">
+                          <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">{group.category}</span>
+                        </div>
+                      )}
+                      {group.program && (
+                        <div className="px-4 py-1.5 pl-6">
+                          <span className="text-xs font-semibold text-gray-400">{group.program}</span>
+                        </div>
+                      )}
+                      {group.kpis.map(kpi => {
                 const batchForm = batchFormData[kpi.id] || createEmptyBatchForm()
                 const isExpanded = batchExpandedKpis.has(kpi.id)
                 const filled = batchHasData(kpi.id)
                 const monthlyTarget = batchGetMonthlyTarget(kpi)
-                const weeklyTarget = batchGetWeeklyTarget(kpi)
                 const weeklyRateStr = batchCalcWeeklyRate(kpi)
                 const monthlyRateStr = batchCalcMonthlyRate(kpi)
                 const batchMonthlyCumulative = batchCalcMonthlyCumulative(kpi.id)
@@ -847,18 +889,18 @@ export default function ReportsPage() {
                 return (
                   <div
                     key={kpi.id}
-                    className={`bg-white rounded-xl border-2 transition-colors ${
+                    className={`bg-gray-900 rounded-xl border-2 transition-colors ${
                       filled
-                        ? 'border-gray-300 border-l-4 border-l-green-600'
-                        : 'border-gray-200'
+                        ? 'border-gray-700 border-l-4 border-l-green-600'
+                        : 'border-gray-700'
                     }`}
                   >
                     {/* KPI 헤더 */}
                     <div className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">{kpi.name}</h3>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                          <h3 className="font-semibold text-white">{kpi.name}</h3>
+                          <span className="px-2 py-0.5 bg-blue-900/20 text-blue-400 text-xs font-medium rounded-full">
                             {kpi.unit}
                           </span>
                         </div>
@@ -866,40 +908,53 @@ export default function ReportsPage() {
                       </div>
 
                       {/* 목표 정보 */}
-                      <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-4">
-                        <span>월간 목표: <span className="font-medium text-gray-700">{monthlyTarget.toLocaleString()}</span></span>
-                        <span>주간 목표: <span className="font-medium text-gray-700">{weeklyTarget.toLocaleString()}</span></span>
+                      <div className="flex flex-wrap gap-3 text-xs text-gray-400 mb-4">
+                        <span>월간 목표: <span className="font-medium text-gray-300">{monthlyTarget.toLocaleString()}</span></span>
                       </div>
 
-                      {/* 주간 달성 입력 */}
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          주간 달성
-                        </label>
-                        <input
-                          type="number"
-                          value={batchForm.weekly_achievement}
-                          onChange={e => batchUpdateForm(kpi.id, 'weekly_achievement', e.target.value)}
-                          placeholder="이번 주 달성값 입력"
-                          className="w-full px-4 py-3 text-lg font-semibold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
+                      {/* 주간 목표 + 주간 달성 입력 */}
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            주간 목표
+                          </label>
+                          <input
+                            type="number"
+                            value={batchForm.weekly_target}
+                            onChange={e => batchUpdateForm(kpi.id, 'weekly_target', e.target.value)}
+                            placeholder="주간 목표값"
+                            className="w-full px-4 py-3 text-lg font-semibold border-2 border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            주간 달성
+                          </label>
+                          <input
+                            type="number"
+                            value={batchForm.weekly_achievement}
+                            onChange={e => batchUpdateForm(kpi.id, 'weekly_achievement', e.target.value)}
+                            placeholder="이번 주 달성값 입력"
+                            className="w-full px-4 py-3 text-lg font-semibold border-2 border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
                       </div>
 
                       {/* 자동 계산 지표 */}
                       {batchForm.weekly_achievement !== '' && (
-                        <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg text-sm">
+                        <div className="grid grid-cols-3 gap-3 p-3 bg-gray-800/50 rounded-lg text-sm">
                           <div>
-                            <span className="text-gray-500 text-xs">주간달성률</span>
+                            <span className="text-gray-400 text-xs">주간달성률</span>
                             <p className={`font-bold ${batchGetRateColor(weeklyRateStr)}`}>
                               {weeklyRateStr === '-' ? '-' : `${weeklyRateStr}%`}
                             </p>
                           </div>
                           <div>
-                            <span className="text-gray-500 text-xs">월간누적</span>
-                            <p className="font-bold text-gray-800">{batchMonthlyCumulative.toLocaleString()}</p>
+                            <span className="text-gray-400 text-xs">월간누적</span>
+                            <p className="font-bold text-gray-200">{batchMonthlyCumulative.toLocaleString()}</p>
                           </div>
                           <div>
-                            <span className="text-gray-500 text-xs">월간달성률</span>
+                            <span className="text-gray-400 text-xs">월간달성률</span>
                             <p className={`font-bold ${batchGetRateColor(monthlyRateStr)}`}>
                               {monthlyRateStr === '-' ? '-' : `${monthlyRateStr}%`}
                             </p>
@@ -911,7 +966,7 @@ export default function ReportsPage() {
                     {/* PDCA 토글 버튼 */}
                     <button
                       onClick={() => batchToggleExpand(kpi.id)}
-                      className="w-full flex items-center justify-center gap-1 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-t border-gray-100 transition-colors"
+                      className="w-full flex items-center justify-center gap-1 py-2 text-sm text-gray-400 hover:text-gray-300 hover:bg-gray-700 border-t border-gray-700 transition-colors"
                     >
                       {isExpanded ? (
                         <>PDCA 접기 <ChevronUp className="w-4 h-4" /></>
@@ -922,9 +977,9 @@ export default function ReportsPage() {
 
                     {/* PDCA 섹션 (확장 시) */}
                     {isExpanded && (
-                      <div className="p-4 border-t border-gray-100 space-y-3">
+                      <div className="p-4 border-t border-gray-700 space-y-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                          <label className="block text-xs font-medium text-gray-300 mb-1">
                             전략
                             {batchForm.strategy && reports.some(r => r.kpi_id === kpi.id && r.report_date < batchDate && r.strategy === batchForm.strategy) && (
                               <span className="ml-1 text-blue-500">(이전 주에서 가져옴)</span>
@@ -935,11 +990,11 @@ export default function ReportsPage() {
                             value={batchForm.strategy}
                             onChange={e => batchUpdateForm(kpi.id, 'strategy', e.target.value)}
                             placeholder="전략적 방향"
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                            className="w-full px-3 py-2 border-2 border-gray-700 rounded-xl text-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                          <label className="block text-xs font-medium text-gray-300 mb-1">
                             PLAN
                             {batchForm.plan && reports.some(r => r.kpi_id === kpi.id && r.report_date < batchDate && r.action === batchForm.plan) && (
                               <span className="ml-1 text-blue-500">(이전 주 ACTION에서 가져옴)</span>
@@ -950,7 +1005,7 @@ export default function ReportsPage() {
                             value={batchForm.plan}
                             onChange={e => batchUpdateForm(kpi.id, 'plan', e.target.value)}
                             placeholder="이번 주 계획"
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                            className="w-full px-3 py-2 border-2 border-gray-700 rounded-xl text-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                           />
                         </div>
                         {/* 지난주 ACTION 실행 여부 체크박스 */}
@@ -959,32 +1014,32 @@ export default function ReportsPage() {
                             r => r.kpi_id === kpi.id && r.report_date < batchDate && r.action
                           )
                           return prevBatchReport?.action ? (
-                            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border-2 border-blue-200">
+                            <div className="flex items-center gap-3 p-3 bg-blue-900/20 rounded-xl border-2 border-blue-700">
                               <input
                                 type="checkbox"
                                 checked={batchForm.action_executed || false}
                                 onChange={(e) => batchUpdateForm(kpi.id, 'action_executed', e.target.checked)}
-                                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                className="w-5 h-5 rounded border-gray-700 text-blue-600 focus:ring-blue-500"
                               />
                               <div>
-                                <p className="text-sm font-medium text-gray-900">지난주 ACTION 실행 완료</p>
+                                <p className="text-sm font-medium text-white">지난주 ACTION 실행 완료</p>
                                 <p className="text-xs text-gray-400 mt-0.5">&quot;{prevBatchReport.action}&quot;</p>
                               </div>
                             </div>
                           ) : null
                         })()}
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">DO</label>
+                          <label className="block text-xs font-medium text-gray-300 mb-1">DO</label>
                           <textarea
                             rows={2}
                             value={batchForm.do_action}
                             onChange={e => batchUpdateForm(kpi.id, 'do_action', e.target.value)}
                             placeholder="실행한 내용"
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                            className="w-full px-3 py-2 border-2 border-gray-700 rounded-xl text-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">CHECK</label>
+                          <label className="block text-xs font-medium text-gray-300 mb-1">CHECK</label>
                           {/* CHECK 필드 위에 시스템 수치 자동 표시 */}
                           {(() => {
                             const prevReports = reports.filter(r => r.kpi_id === kpi.id && r.report_date < batchDate).sort((a,b) => b.report_date.localeCompare(a.report_date))
@@ -994,7 +1049,7 @@ export default function ReportsPage() {
                             const diff = currentAchievement - lastAchievement
                             if (lastReport) {
                               return (
-                                <div className="bg-gray-50 rounded-lg px-3 py-2 mb-2 text-xs text-gray-600 border border-gray-200">
+                                <div className="bg-gray-800/50 rounded-lg px-3 py-2 mb-2 text-xs text-gray-300 border border-gray-700">
                                   <span className="font-medium">시스템 분석:</span>
                                   {' '}주간달성 {currentAchievement.toLocaleString()} (전주 {lastAchievement.toLocaleString()},{' '}
                                   <span className={diff >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
@@ -1011,21 +1066,21 @@ export default function ReportsPage() {
                             value={batchForm.check_result}
                             onChange={e => batchUpdateForm(kpi.id, 'check_result', e.target.value)}
                             placeholder="점검 결과"
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                            className="w-full px-3 py-2 border-2 border-gray-700 rounded-xl text-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">ACTION</label>
+                          <label className="block text-xs font-medium text-gray-300 mb-1">ACTION</label>
                           <textarea
                             rows={2}
                             value={batchForm.action}
                             onChange={e => batchUpdateForm(kpi.id, 'action', e.target.value)}
                             placeholder="개선 조치 (다음 주 PLAN에 자동 반영)"
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                            className="w-full px-3 py-2 border-2 border-gray-700 rounded-xl text-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+                          <label className="block text-xs font-medium text-gray-300 mb-1 flex items-center gap-1">
                             <AlertCircle className="w-3 h-3 text-orange-500" />
                             해결과제
                             <span className="text-orange-500 text-xs">(입력 시 액션 아이템 자동 생성)</span>
@@ -1035,17 +1090,17 @@ export default function ReportsPage() {
                             value={batchForm.issue}
                             onChange={e => batchUpdateForm(kpi.id, 'issue', e.target.value)}
                             placeholder="이슈 / 해결과제"
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                            className="w-full px-3 py-2 border-2 border-gray-700 rounded-xl text-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">필요한 도움</label>
+                          <label className="block text-xs font-medium text-gray-300 mb-1">필요한 도움</label>
                           <textarea
                             rows={2}
                             value={batchForm.help_needed}
                             onChange={e => batchUpdateForm(kpi.id, 'help_needed', e.target.value)}
                             placeholder="필요한 도움 / 지원 요청"
-                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                            className="w-full px-3 py-2 border-2 border-gray-700 rounded-xl text-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                           />
                         </div>
                       </div>
@@ -1053,14 +1108,18 @@ export default function ReportsPage() {
                   </div>
                 )
               })}
+                    </React.Fragment>
+                  )
+                })
+              })()}
             </div>
           )}
 
           {/* 하단 고정 푸터 */}
           {batchTeamKpis.length > 0 && (
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg z-40">
+            <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t-2 border-gray-700 shadow-lg z-40">
               <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-300">
                   <span className={`font-semibold ${batchFilledCount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                     {batchFilledCount}
                   </span>
@@ -1071,7 +1130,7 @@ export default function ReportsPage() {
                   disabled={batchSaving || batchFilledCount === 0}
                   className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
                     batchSaving || batchFilledCount === 0
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? 'bg-gray-300 text-gray-400 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
                   }`}
                 >
@@ -1092,8 +1151,8 @@ export default function ReportsPage() {
           {/* 요약 카드 */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">요약</span>
-              <div className="h-px bg-gray-200 flex-1"></div>
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">요약</span>
+              <div className="h-px bg-gray-700 flex-1"></div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <StatCard icon={FileText} label="총 보고서" value={reports.length} color="blue" />
@@ -1104,22 +1163,22 @@ export default function ReportsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* 입력 폼 */}
-            <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+            <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
               <div className="h-1 bg-blue-600"></div>
-              <div className="px-5 pt-4 pb-2 flex items-center justify-between border-b border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900">
+              <div className="px-5 pt-4 pb-2 flex items-center justify-between border-b border-gray-700">
+                <h3 className="text-lg font-bold text-white">
                   {editingReportId ? '보고서 수정' : '보고서 작성'}
                 </h3>
                 <div className="flex gap-2">
                   {editingReportId && (
                     <button
                       onClick={resetForm}
-                      className="text-sm text-gray-400 hover:text-gray-600 border border-gray-300 rounded-xl px-3 py-1"
+                      className="text-sm text-gray-400 hover:text-gray-300 border border-gray-700 rounded-xl px-3 py-1"
                     >
                       수정 취소
                     </button>
                   )}
-                  <button onClick={fetchData} className="text-gray-400 hover:text-gray-600 hover:bg-gray-50 p-2 rounded-xl transition">
+                  <button onClick={fetchData} className="text-gray-400 hover:text-gray-300 hover:bg-gray-700 p-2 rounded-xl transition">
                     <RefreshCw className="w-5 h-5" />
                   </button>
                 </div>
@@ -1129,9 +1188,9 @@ export default function ReportsPage() {
                 {/* 섹션: 팀/KPI 선택 */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                     <span className="text-xs font-semibold text-gray-400 uppercase px-2">팀 / KPI 선택</span>
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -1144,7 +1203,7 @@ export default function ReportsPage() {
                           if (!editingReportId) resetForm()
                           setSelectedTeam(e.target.value)
                         }}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full border border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="">팀 선택</option>
                         {teams.map((team) => (
@@ -1157,13 +1216,23 @@ export default function ReportsPage() {
                       <select
                         value={selectedKPI}
                         onChange={(e) => setSelectedKPI(e.target.value)}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full border border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         disabled={!selectedTeam}
                       >
                         <option value="">KPI 선택</option>
-                        {filteredKPIs.map((kpi) => (
-                          <option key={kpi.id} value={kpi.id}>{kpi.name}</option>
-                        ))}
+                        {(() => {
+                          const groups = groupKpisByCategoryProgram(filteredKPIs)
+                          return groups.map((g, i) => {
+                            const label = [g.category, g.program].filter(Boolean).join(' > ') || '미분류'
+                            return (
+                              <optgroup key={i} label={label}>
+                                {g.kpis.map(kpi => (
+                                  <option key={kpi.id} value={kpi.id}>{kpi.name}</option>
+                                ))}
+                              </optgroup>
+                            )
+                          })
+                        })()}
                       </select>
                     </div>
                   </div>
@@ -1172,9 +1241,9 @@ export default function ReportsPage() {
                 {/* 섹션: 보고일자 */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                     <span className="text-xs font-semibold text-gray-400 uppercase px-2">보고일자</span>
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">보고일자 *</label>
@@ -1182,7 +1251,7 @@ export default function ReportsPage() {
                       type="date"
                       value={form.report_date}
                       onChange={(e) => setForm({ ...form, report_date: e.target.value })}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
                 </div>
@@ -1191,17 +1260,17 @@ export default function ReportsPage() {
                 {selectedKPIInfo && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-px bg-gray-200 flex-1"></div>
+                      <div className="h-px bg-gray-700 flex-1"></div>
                       <span className="text-xs font-semibold text-gray-400 uppercase px-2">KPI 정보</span>
-                      <div className="h-px bg-gray-200 flex-1"></div>
+                      <div className="h-px bg-gray-700 flex-1"></div>
                     </div>
-                    <div className="bg-blue-50 rounded-xl p-3 text-sm border border-blue-200">
+                    <div className="bg-blue-900/20 rounded-xl p-3 text-sm border border-blue-700">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-medium text-blue-600">
                           {reportMonth ? `${reportMonth.replace('-', '년 ')}월 목표` : 'KPI 정보'}
                         </span>
                         {currentGoal && (
-                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">월별 목표 적용됨</span>
+                          <span className="text-xs text-blue-600 bg-blue-900/30 px-2 py-0.5 rounded">월별 목표 적용됨</span>
                         )}
                       </div>
                       {selectedKPIInfo.yearly_target && (
@@ -1214,64 +1283,78 @@ export default function ReportsPage() {
                   </div>
                 )}
 
-                {/* 섹션: 실적 입력 */}
+                {/* 섹션: 목표 및 실적 입력 */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px bg-gray-200 flex-1"></div>
-                    <span className="text-xs font-semibold text-gray-400 uppercase px-2">실적 입력</span>
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
+                    <span className="text-xs font-semibold text-gray-400 uppercase px-2">목표 / 실적 입력</span>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-600 mb-1">
-                      이번 주 달성 실적 *
-                    </label>
-                    <input
-                      type="number"
-                      value={form.weekly_achievement}
-                      onChange={(e) => setForm({ ...form, weekly_achievement: e.target.value })}
-                      className="w-full border-2 border-blue-200 bg-blue-50/20 rounded-xl px-3 py-2.5 text-xl font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      placeholder={selectedKPIInfo ? `단위: ${selectedKPIInfo.unit || '-'}` : '숫자 입력'}
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-300 mb-1">
+                        주간 목표
+                      </label>
+                      <input
+                        type="number"
+                        value={form.weekly_target}
+                        onChange={(e) => setForm({ ...form, weekly_target: e.target.value })}
+                        className="w-full border-2 border-gray-700 bg-gray-800 rounded-xl px-3 py-2.5 text-xl font-medium text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        placeholder="목표값"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-300 mb-1">
+                        이번 주 달성 실적 *
+                      </label>
+                      <input
+                        type="number"
+                        value={form.weekly_achievement}
+                        onChange={(e) => setForm({ ...form, weekly_achievement: e.target.value })}
+                        className="w-full border-2 border-blue-700 bg-blue-900/20/20 rounded-xl px-3 py-2.5 text-xl font-medium text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        placeholder={selectedKPIInfo ? `단위: ${selectedKPIInfo.unit || '-'}` : '숫자 입력'}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* 섹션: 달성률 요약 */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                     <span className="text-xs font-semibold text-gray-400 uppercase px-2">달성률 요약</span>
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl p-4 space-y-3 border-2 border-gray-300">
+                  <div className="bg-gray-800/50 rounded-xl p-4 space-y-3 border-2 border-gray-700">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-400">월간목표</span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-white">
                           {form.monthly_target ? parseFloat(form.monthly_target).toLocaleString() : '-'}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-400">주간목표</span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-white">
                           {form.weekly_target ? parseFloat(form.weekly_target).toLocaleString() : '-'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="border-t border-gray-200"></div>
+                    <div className="border-t border-gray-700"></div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                       <div>
                         <span className="text-xs text-gray-400">주간달성</span>
-                        <p className="text-sm font-bold text-gray-900">
+                        <p className="text-sm font-bold text-white">
                           {form.weekly_achievement ? parseFloat(form.weekly_achievement).toLocaleString() : '-'}
                         </p>
                       </div>
                       <div>
                         <span className="text-xs text-gray-400">월간누적</span>
-                        <p className="text-sm font-bold text-gray-900">
+                        <p className="text-sm font-bold text-white">
                           {monthlyCumulative ? monthlyCumulative.toLocaleString() : '-'}
                         </p>
                       </div>
@@ -1294,9 +1377,9 @@ export default function ReportsPage() {
                 {/* 섹션: PDCA 입력 */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                     <span className="text-xs font-semibold text-gray-400 uppercase px-2">PDCA 입력</span>
-                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <div className="h-px bg-gray-700 flex-1"></div>
                   </div>
 
                   <div className="space-y-3">
@@ -1314,15 +1397,15 @@ export default function ReportsPage() {
                         ? reports.find(r => r.kpi_id === selectedKPI && r.report_date < form.report_date && r.action)
                         : null
                       const actionCheckbox = key === 'do_action' && prevReport?.action ? (
-                        <div key="action_executed" className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border-2 border-blue-200">
+                        <div key="action_executed" className="flex items-center gap-3 p-3 bg-blue-900/20 rounded-xl border-2 border-blue-700">
                           <input
                             type="checkbox"
                             checked={form.action_executed || false}
                             onChange={(e) => setForm({...form, action_executed: e.target.checked})}
-                            className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="w-5 h-5 rounded border-gray-700 text-blue-600 focus:ring-blue-500"
                           />
                           <div>
-                            <p className="text-sm font-medium text-gray-900">지난주 ACTION 실행 완료</p>
+                            <p className="text-sm font-medium text-white">지난주 ACTION 실행 완료</p>
                             <p className="text-xs text-gray-400 mt-0.5">&quot;{prevReport.action}&quot;</p>
                           </div>
                         </div>
@@ -1338,7 +1421,7 @@ export default function ReportsPage() {
                         const weeklyRate = calcWeeklyRate()
                         if (lastReport) {
                           return (
-                            <div className="bg-gray-50 rounded-lg px-3 py-2 mb-2 text-xs text-gray-600 border border-gray-200">
+                            <div className="bg-gray-800/50 rounded-lg px-3 py-2 mb-2 text-xs text-gray-300 border border-gray-700">
                               <span className="font-medium">시스템 분석:</span>
                               {' '}주간달성 {currentAchievement.toLocaleString()} (전주 {lastAchievement.toLocaleString()},{' '}
                               <span className={diff >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
@@ -1356,13 +1439,13 @@ export default function ReportsPage() {
                           {actionCheckbox}
                           {checkStatsBox}
                           <div
-                            className={`border-2 border-gray-300 rounded-xl overflow-hidden ${pdcaBorderColors[key] || ''}`}
+                            className={`border-2 border-gray-700 rounded-xl overflow-hidden ${pdcaBorderColors[key] || ''}`}
                           >
-                            <div className="px-3 pt-2 pb-1 bg-gray-50/50">
+                            <div className="px-3 pt-2 pb-1 bg-gray-800/50/50">
                               <div className="flex items-center gap-2">
-                                <label className="text-sm font-medium text-gray-600">{label}</label>
+                                <label className="text-sm font-medium text-gray-300">{label}</label>
                                 {key === 'plan' && planAutoFilled && !editingReportId && (
-                                  <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                  <span className="text-xs text-blue-600 bg-blue-900/20 px-1.5 py-0.5 rounded">
                                     지난주 ACTION에서 가져옴
                                   </span>
                                 )}
@@ -1389,7 +1472,7 @@ export default function ReportsPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving || !selectedTeam || !selectedKPI}
-                  className="w-full bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base font-bold shadow-md transition"
+                  className="w-full bg-blue-600 text-white py-3.5 rounded-xl hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base font-bold shadow-md transition"
                 >
                   <Save className="w-5 h-5" />
                   {saving ? '저장 중...' : editingReportId ? '보고서 수정' : '보고서 저장'}
@@ -1398,11 +1481,11 @@ export default function ReportsPage() {
             </div>
 
             {/* 최근 보고서 */}
-            <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+            <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
               <div className="h-1 bg-blue-600"></div>
-              <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900">최근 입력된 보고서</h3>
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{reports.length}개</span>
+              <div className="px-5 py-4 border-b border-gray-700 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">최근 입력된 보고서</h3>
+                <span className="text-xs text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full">{reports.length}개</span>
               </div>
               <div className="max-h-[700px] overflow-y-auto">
                 {reports.length === 0 ? (
@@ -1412,7 +1495,7 @@ export default function ReportsPage() {
                     <p className="text-xs mt-1">좌측 폼에서 보고서를 입력하면 여기에 표시됩니다</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-300">
+                  <div className="divide-y divide-gray-700">
                     {reports.map((report) => {
                       const rate = report.monthly_achievement_rate || 0
                       const isEditing = editingReportId === report.id
@@ -1422,26 +1505,26 @@ export default function ReportsPage() {
                         <div
                           key={report.id}
                           className={`p-4 transition ${
-                            isEditing ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'hover:bg-gray-50'
+                            isEditing ? 'bg-blue-900/20 border-l-4 border-l-blue-600' : 'hover:bg-gray-700'
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-semibold text-gray-900">{report.report_date}</span>
+                                <span className="text-sm font-semibold text-white">{report.report_date}</span>
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(rate)}`}>
                                   {rate.toFixed(1)}%
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="bg-blue-50 text-blue-600 text-xs px-2 py-0.5 rounded">{report.team_name}</span>
-                                <h4 className="font-medium text-gray-700 text-sm">{report.kpi_name}</h4>
+                                <span className="bg-blue-900/20 text-blue-600 text-xs px-2 py-0.5 rounded">{report.team_name}</span>
+                                <h4 className="font-medium text-gray-300 text-sm">{report.kpi_name}</h4>
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => handleEdit(report)}
-                                className="text-blue-600 hover:bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition flex items-center gap-1 text-xs"
+                                className="text-blue-600 hover:bg-blue-900/20 border border-blue-700 px-2 py-1 rounded-lg transition flex items-center gap-1 text-xs"
                                 title="수정"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -1449,7 +1532,7 @@ export default function ReportsPage() {
                               </button>
                               <button
                                 onClick={() => setDeleteTarget(report.id)}
-                                className="text-red-600 hover:bg-red-50 border border-red-200 px-2 py-1 rounded-lg transition flex items-center gap-1 text-xs"
+                                className="text-red-600 hover:bg-red-900/20 border border-red-700 px-2 py-1 rounded-lg transition flex items-center gap-1 text-xs"
                                 title="삭제"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1457,21 +1540,21 @@ export default function ReportsPage() {
                               </button>
                             </div>
                           </div>
-                          <div className="grid grid-cols-3 gap-2 text-gray-600 mt-2">
+                          <div className="grid grid-cols-3 gap-2 text-gray-300 mt-2">
                             <div className="text-xs">목표: <span className="text-sm font-medium">{report.weekly_target?.toLocaleString() || '-'}</span></div>
                             <div className="text-xs">달성: <span className="text-sm font-medium">{report.weekly_achievement?.toLocaleString() || '-'}</span></div>
                             <div className="text-xs">누적: <span className="text-sm font-medium">{report.monthly_cumulative?.toLocaleString() || '-'}</span></div>
                           </div>
                           {(strategyPreview || planPreview) && (
-                            <div className="mt-2 pt-2 border-t border-gray-100 space-y-0.5">
+                            <div className="mt-2 pt-2 border-t border-gray-700 space-y-0.5">
                               {strategyPreview && (
                                 <p className="text-xs text-gray-400 truncate">
-                                  <span className="text-gray-500 font-medium">전략:</span> {strategyPreview}
+                                  <span className="text-gray-400 font-medium">전략:</span> {strategyPreview}
                                 </p>
                               )}
                               {planPreview && (
                                 <p className="text-xs text-gray-400 truncate">
-                                  <span className="text-gray-500 font-medium">계획:</span> {planPreview}
+                                  <span className="text-gray-400 font-medium">계획:</span> {planPreview}
                                 </p>
                               )}
                             </div>

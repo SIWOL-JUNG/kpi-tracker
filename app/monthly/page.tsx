@@ -61,9 +61,9 @@ const getStatusColor = (rate: number) => {
 }
 
 const getStatusBg = (rate: number) => {
-  if (rate >= 100) return 'bg-green-100 text-green-700'
-  if (rate >= 70) return 'bg-yellow-100 text-yellow-700'
-  return 'bg-red-100 text-red-700'
+  if (rate >= 100) return 'bg-green-900/30 text-green-400'
+  if (rate >= 70) return 'bg-yellow-900/30 text-yellow-400'
+  return 'bg-red-900/30 text-red-400'
 }
 
 // 변화량 표시 컴포넌트
@@ -248,11 +248,11 @@ export default function MonthlyReport() {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 print:p-2">
       {/* 헤더 */}
-      <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden mb-8 print:shadow-none print:border-0">
+      <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden mb-8 print:shadow-none print:border-0">
         <div className="h-1 bg-blue-600"></div>
         <div className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">월간 보고서</h2>
+            <h2 className="text-2xl font-bold text-white mb-1">월간 보고서</h2>
             <p className="text-gray-400 text-sm">월별 KPI 달성 현황 및 팀 성과를 요약합니다</p>
           </div>
           <div className="flex items-center gap-3 print:hidden">
@@ -262,7 +262,7 @@ export default function MonthlyReport() {
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="border-2 border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                className="border-2 border-gray-700 rounded-xl px-4 py-2.5 text-sm font-medium bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 {monthOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -272,7 +272,7 @@ export default function MonthlyReport() {
             {/* 인쇄 버튼 */}
             <button
               onClick={handlePrint}
-              className="px-4 py-2.5 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-xl hover:bg-blue-50 hover:shadow flex items-center gap-1.5 transition"
+              className="px-4 py-2.5 text-sm text-blue-600 hover:text-blue-400 border border-blue-700 rounded-xl hover:bg-blue-900/20 hover:shadow flex items-center gap-1.5 transition"
             >
               <Printer className="w-4 h-4" />
               인쇄
@@ -293,22 +293,22 @@ export default function MonthlyReport() {
               {selectedMonthLabel} 요약
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className="bg-blue-50/50 rounded-xl border-2 border-gray-200 p-5 border-l-4 border-l-blue-600">
+              <div className="bg-blue-900/20/50 rounded-xl border-2 border-gray-700 p-5 border-l-4 border-l-blue-600">
                 <div className="flex items-center gap-2 mb-1">
                   <FileText className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-gray-500 font-medium">전체 보고 건수</span>
+                  <span className="text-sm text-gray-400 font-medium">전체 보고 건수</span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{totalReportCount}</p>
+                <p className="text-2xl font-bold text-white">{totalReportCount}</p>
                 <div className="mt-1">
                   <ChangeIndicator current={totalReportCount} previous={prevTotalReportCount > 0 ? prevTotalReportCount : null} />
                   <span className="text-xs text-gray-400 ml-1">vs 지난달</span>
                 </div>
               </div>
 
-              <div className="bg-blue-50/50 rounded-xl border-2 border-gray-200 p-5 border-l-4 border-l-blue-600">
+              <div className="bg-blue-900/20/50 rounded-xl border-2 border-gray-700 p-5 border-l-4 border-l-blue-600">
                 <div className="flex items-center gap-2 mb-1">
                   <BarChart3 className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-gray-500 font-medium">평균 달성률</span>
+                  <span className="text-sm text-gray-400 font-medium">평균 달성률</span>
                 </div>
                 <p className={`text-2xl font-bold ${getStatusColor(avgRate)}`}>{avgRate.toFixed(1)}%</p>
                 <div className="mt-1">
@@ -317,10 +317,10 @@ export default function MonthlyReport() {
                 </div>
               </div>
 
-              <div className="bg-green-50/50 rounded-xl border-2 border-gray-200 p-5 border-l-4 border-l-green-600">
+              <div className="bg-green-900/20/50 rounded-xl border-2 border-gray-700 p-5 border-l-4 border-l-green-600">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-500 font-medium">목표 달성</span>
+                  <span className="text-sm text-gray-400 font-medium">목표 달성</span>
                 </div>
                 <p className="text-2xl font-bold text-green-600">
                   {reports.filter(r => (r.monthly_achievement_rate || 0) >= 100).length}
@@ -328,10 +328,10 @@ export default function MonthlyReport() {
                 <span className="text-xs text-gray-400">달성률 100% 이상</span>
               </div>
 
-              <div className="bg-red-50/50 rounded-xl border-2 border-gray-200 p-5 border-l-4 border-l-red-600">
+              <div className="bg-red-900/20/50 rounded-xl border-2 border-gray-700 p-5 border-l-4 border-l-red-600">
                 <div className="flex items-center gap-2 mb-1">
                   <AlertCircle className="w-4 h-4 text-red-600" />
-                  <span className="text-sm text-gray-500 font-medium">해결과제 건수</span>
+                  <span className="text-sm text-gray-400 font-medium">해결과제 건수</span>
                 </div>
                 <p className="text-2xl font-bold text-red-600">{issueSummary.issueCount}</p>
                 <span className="text-xs text-gray-400">이슈 보고 건수</span>
@@ -342,32 +342,32 @@ export default function MonthlyReport() {
           {/* 팀별 성과 테이블 */}
           <div className="mb-8">
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">팀별 성과</h3>
-            <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+            <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
               <div className="h-1 bg-blue-600"></div>
               {teamSummaries.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gray-100 border-b border-gray-200">
-                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-8">#</th>
-                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">팀명</th>
-                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">팀장</th>
-                        <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">보고 건수</th>
-                        <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">평균 달성률</th>
-                        <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">지난달 대비</th>
+                      <tr className="bg-gray-800 border-b border-gray-700">
+                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-8">#</th>
+                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">팀명</th>
+                        <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">팀장</th>
+                        <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">보고 건수</th>
+                        <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">평균 달성률</th>
+                        <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">지난달 대비</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-700">
                       {teamSummaries.map((team, idx) => (
-                        <tr key={team.name} className="hover:bg-blue-50/30 transition">
+                        <tr key={team.name} className="hover:bg-blue-900/20/30 transition">
                           <td className="px-4 py-4 text-sm text-gray-400 font-medium">{idx + 1}</td>
                           <td className="px-4 py-4 text-sm font-semibold">
                             <Link href={`/?team=${team.teamId}`} className="text-blue-600 hover:underline">
                               {team.name}
                             </Link>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-600">{team.leader}</td>
-                          <td className="px-4 py-4 text-center text-sm text-gray-600">{team.reportCount}</td>
+                          <td className="px-4 py-4 text-sm text-gray-300">{team.leader}</td>
+                          <td className="px-4 py-4 text-center text-sm text-gray-300">{team.reportCount}</td>
                           <td className="px-4 py-4 text-center">
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${getStatusBg(team.avgRate)}`}>
                               {team.avgAchievement}%
@@ -394,7 +394,7 @@ export default function MonthlyReport() {
           {teamSummaries.length > 0 && (
             <div className="mb-8">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">팀별 비교 차트</h3>
-              <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+              <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
                 <div className="h-1 bg-blue-600"></div>
                 <div className="p-5">
                   <TeamBarChart teamSummaries={teamSummaries} />
@@ -413,15 +413,15 @@ export default function MonthlyReport() {
                   Top 5 우수 KPI
                 </span>
               </h3>
-              <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+              <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
                 <div className="h-1 bg-green-600"></div>
                 {kpiPerformance.top5.length > 0 ? (
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-gray-700">
                     {kpiPerformance.top5.map((r, idx) => (
-                      <div key={`top-${r.kpi_id}-${r.team_id}`} className="flex items-center justify-between px-5 py-4 hover:bg-green-50/30 transition">
+                      <div key={`top-${r.kpi_id}-${r.team_id}`} className="flex items-center justify-between px-5 py-4 hover:bg-green-900/20/30 transition">
                         <div className="flex items-center gap-3 min-w-0">
                           <span className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                            idx === 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+                            idx === 0 ? 'bg-yellow-900/30 text-yellow-400' : 'bg-gray-800 text-gray-400'
                           }`}>
                             {idx + 1}
                           </span>
@@ -452,14 +452,14 @@ export default function MonthlyReport() {
                   Bottom 5 미달 KPI
                 </span>
               </h3>
-              <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+              <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
                 <div className="h-1 bg-red-600"></div>
                 {kpiPerformance.bottom5.length > 0 ? (
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-gray-700">
                     {kpiPerformance.bottom5.map((r, idx) => (
-                      <div key={`bot-${r.kpi_id}-${r.team_id}`} className="flex items-center justify-between px-5 py-4 hover:bg-red-50/30 transition">
+                      <div key={`bot-${r.kpi_id}-${r.team_id}`} className="flex items-center justify-between px-5 py-4 hover:bg-red-900/20/30 transition">
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold">
+                          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-red-900/30 text-red-600 flex items-center justify-center text-xs font-bold">
                             {idx + 1}
                           </span>
                           <div className="min-w-0">
@@ -490,22 +490,22 @@ export default function MonthlyReport() {
                 해결과제 요약 ({issueSummary.issueCount}건)
               </span>
             </h3>
-            <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+            <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
               <div className="h-1 bg-red-600"></div>
               {issueSummary.issueTexts.length > 0 ? (
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-700">
                   {issueSummary.issueTexts.map((item, idx) => (
-                    <div key={`issue-${idx}`} className="px-5 py-4 hover:bg-red-50/20 transition">
+                    <div key={`issue-${idx}`} className="px-5 py-4 hover:bg-red-900/20 transition">
                       <div className="flex items-start gap-3">
-                        <span className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold">
+                        <span className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-900/30 text-red-600 flex items-center justify-center text-xs font-bold">
                           {idx + 1}
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{item.team}</span>
+                            <span className="text-xs font-medium text-blue-600 bg-blue-900/20 px-2 py-0.5 rounded-full">{item.team}</span>
                             <span className="text-xs text-gray-400">{item.kpi}</span>
                           </div>
-                          <p className="text-sm text-gray-800 whitespace-pre-wrap">{item.issue}</p>
+                          <p className="text-sm text-gray-200 whitespace-pre-wrap">{item.issue}</p>
                         </div>
                       </div>
                     </div>
@@ -522,7 +522,7 @@ export default function MonthlyReport() {
       )}
 
       {/* 인쇄용 푸터 (화면에서는 숨김) */}
-      <div className="hidden print:block mt-8 pt-4 border-t border-gray-300 text-center text-xs text-gray-400">
+      <div className="hidden print:block mt-8 pt-4 border-t border-gray-700 text-center text-xs text-gray-400">
         KPI 월간 보고서 - {selectedMonthLabel} | 출력일: {new Date().toLocaleDateString('ko-KR')}
       </div>
     </div>

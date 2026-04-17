@@ -18,6 +18,8 @@ export interface KPI {
   direction: 'higher_better' | 'lower_better';
   weight: number;
   description: string;
+  category?: string;    // 카테고리 (예: "개별 프로그램 성과")
+  program?: string;     // 프로그램 (예: "상품 자동 추천")
   base_month: string;
   status: 'active' | 'completed';
   created_at: string;

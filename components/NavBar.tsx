@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, BarChart3, FileText, LineChart, Settings } from 'lucide-react'
+import { Menu, X, BarChart3, FileText, LineChart, Settings, BookOpen } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/', label: '대시보드', icon: BarChart3 },
@@ -46,6 +46,19 @@ export default function NavBar() {
                 </Link>
               )
             })}
+
+            {/* 매뉴얼 강조 버튼 */}
+            <Link
+              href="/manual"
+              className={`flex items-center gap-1.5 px-4 py-2 ml-2 rounded-lg text-sm whitespace-nowrap transition border ${
+                pathname === '/manual'
+                  ? 'bg-amber-500 text-white border-amber-400 font-medium'
+                  : 'bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25 hover:text-amber-200'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              매뉴얼
+            </Link>
           </div>
 
           {/* 모바일 햄버거 */}
@@ -79,6 +92,18 @@ export default function NavBar() {
                 </Link>
               )
             })}
+            <Link
+              href="/manual"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition ${
+                pathname === '/manual'
+                  ? 'bg-amber-500 text-white font-medium'
+                  : 'text-amber-300 hover:text-amber-200 hover:bg-amber-500/15'
+              }`}
+            >
+              <BookOpen className="w-5 h-5" />
+              매뉴얼
+            </Link>
           </div>
         )}
       </div>

@@ -1,0 +1,15 @@
+[
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"구매 전환율(CVR)","unit":"퍼센트","direction":"higher_better","weight":8,"category":"개별 프로그램 성과","program":"상품 자동 추천","base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"유입률(CTR)","unit":"퍼센트","direction":"higher_better","weight":7,"category":"개별 프로그램 성과","program":"상품 자동 추천","base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"절감 마케팅 비용","unit":"원","direction":"higher_better","weight":7,"category":"개별 프로그램 성과","program":"상품 자동 추천","base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"직접 기여 매출","unit":"원","direction":"higher_better","weight":9,"category":"개별 프로그램 성과","program":"상품 자동 추천","base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"신규 매출액","unit":"원","direction":"higher_better","weight":9,"category":"개별 프로그램 성과","program":"소설형 연애 코칭","base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"CAC 대비 수익","unit":"퍼센트","direction":"higher_better","weight":7,"category":"개별 프로그램 성과","program":"소설형 연애 코칭","base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"매출총이익","unit":"원","direction":"higher_better","weight":8,"category":"개별 프로그램 성과","program":"소설형 연애 코칭","base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"순이익률","unit":"퍼센트","direction":"higher_better","weight":8,"category":"개별 프로그램 성과","program":"소설형 연애 코칭","base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"혁신 파이프라인 수","unit":"건수","direction":"higher_better","weight":7,"category":"팀 전체 업무 성과","program":null,"base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"전사 리드타임 단축 총량","unit":"시간","direction":"higher_better","weight":8,"category":"팀 전체 업무 성과","program":null,"base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"누적 재무 기여도","unit":"원","direction":"higher_better","weight":9,"category":"팀 전체 업무 성과","program":null,"base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"프로세스 자동화율","unit":"퍼센트","direction":"higher_better","weight":7,"category":"팀 전체 업무 성과","program":null,"base_month":"2026-04","status":"active"},
+  {"team_id":"4caedba1-c475-4fea-8107-99b607a0d44f","name":"내부 고객 만족도(NPS)","unit":"개","direction":"higher_better","weight":6,"category":"팀 전체 업무 성과","program":null,"base_month":"2026-04","status":"active"}
+]

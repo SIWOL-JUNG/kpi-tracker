@@ -1,32 +1,33 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 
 export async function GET() {
-  const db = getDb()
-  const goals = db.prepare('SELECT * FROM kpi_goals ORDER BY goal_month DESC').all()
-  return NextResponse.json(goals)
+  const { data, error } = await supabase
+    .from('kpi_goals')
+    .select('*')
+    .order('goal_month', { ascending: false })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
 }
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const db = getDb()
-  const id = crypto.randomUUID()
   // upsert: 같은 kpi_id + goal_month면 업데이트
-  db.prepare(`
-    INSERT INTO kpi_goals (id, kpi_id, goal_month, monthly_target, weekly_target)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(kpi_id, goal_month) DO UPDATE SET
-      monthly_target = excluded.monthly_target,
-      weekly_target = excluded.weekly_target
-  `).run(id, body.kpi_id, body.goal_month, body.monthly_target, body.weekly_target)
-  return NextResponse.json({ id, ...body })
+  const { data, error } = await supabase.from('kpi_goals').upsert([{
+    kpi_id: body.kpi_id,
+    goal_month: body.goal_month,
+    monthly_target: body.monthly_target,
+    weekly_target: body.weekly_target,
+  }], { onConflict: 'kpi_id,goal_month' }).select().single()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
 }
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
-  const db = getDb()
-  db.prepare('DELETE FROM kpi_goals WHERE id = ?').run(id)
+  const { error } = await supabase.from('kpi_goals').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

@@ -1,15 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Target, Database } from 'lucide-react'
+import { Target, Database, BookOpen } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 const KpiContent = dynamic(() => import('../kpi/page'), { ssr: false })
 const MigrateContent = dynamic(() => import('../migrate/page'), { ssr: false })
+const ManualContent = dynamic(() => import('../manual/page'), { ssr: false })
 
 const TABS = [
   { key: 'kpi', label: 'KPI 관리', icon: Target },
   { key: 'data', label: '데이터', icon: Database },
+  { key: 'manual', label: '매뉴얼', icon: BookOpen },
 ] as const
 
 type TabKey = typeof TABS[number]['key']
@@ -28,7 +30,7 @@ export default function ManagePage() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition ${
                 tab === t.key
                   ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 border-2 border-gray-300 hover:bg-gray-50'
+                  : 'bg-gray-900 text-gray-300 border-2 border-gray-700 hover:bg-gray-700'
               }`}
             >
               <t.icon className="w-4 h-4" />
@@ -40,6 +42,7 @@ export default function ManagePage() {
 
       {tab === 'kpi' && <KpiContent />}
       {tab === 'data' && <MigrateContent />}
+      {tab === 'manual' && <ManualContent />}
     </div>
   )
 }

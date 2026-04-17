@@ -35,3 +35,8 @@ ALTER TABLE kpis ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
 -- 7. RLS 정책
 ALTER TABLE kpi_goals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all access to kpi_goals" ON kpi_goals FOR ALL USING (true);
+
+-- 8. KPI 카테고리/프로그램 컬럼 추가 (2026-04-06)
+ALTER TABLE kpis ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE kpis ADD COLUMN IF NOT EXISTS program TEXT;
+CREATE INDEX IF NOT EXISTS idx_kpis_category ON kpis(team_id, category);

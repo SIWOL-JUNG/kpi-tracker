@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Team, KPI, KPIGoal } from '@/types'
+import { groupKpisByCategoryProgram } from '@/lib/kpi-utils'
 import { Plus, Edit2, Trash2, X, Save, Users, Target, RefreshCw, Calendar, CheckCircle, Clock } from 'lucide-react'
 import Notification from '@/components/Notification'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -49,6 +50,8 @@ export default function KPIPage() {
     monthly_target: '',
     weekly_target: '',
     description: '',
+    category: '',
+    program: '',
     base_month: ''
   })
   const [goalForm, setGoalForm] = useState({ goal_month: '', monthly_target: '', weekly_target: '' })
@@ -159,6 +162,8 @@ export default function KPIPage() {
         monthly_target: kpiForm.monthly_target ? parseFloat(kpiForm.monthly_target) : null,
         weekly_target: kpiForm.weekly_target ? parseFloat(kpiForm.weekly_target) : null,
         description: kpiForm.description || null,
+        category: kpiForm.category || null,
+        program: kpiForm.program || null,
         base_month: kpiForm.base_month || null,
         status: 'active',
       }
@@ -181,7 +186,7 @@ export default function KPIPage() {
         showNotif('success', 'KPI가 추가되었습니다.')
       }
       setShowKPIModal(false)
-      setKpiForm({ team_id: '', name: '', unit: '', direction: 'higher_better', weight: '5', yearly_target: '', monthly_target: '', weekly_target: '', description: '', base_month: '' })
+      setKpiForm({ team_id: '', name: '', unit: '', direction: 'higher_better', weight: '5', yearly_target: '', monthly_target: '', weekly_target: '', description: '', category: '', program: '', base_month: '' })
       setEditingKPI(null)
       fetchData()
     } catch (e) {
@@ -287,11 +292,13 @@ export default function KPIPage() {
         monthly_target: kpi.monthly_target?.toString() || '',
         weekly_target: kpi.weekly_target?.toString() || '',
         description: kpi.description || '',
+        category: kpi.category || '',
+        program: kpi.program || '',
         base_month: kpi.base_month || ''
       })
     } else {
       setEditingKPI(null)
-      setKpiForm({ team_id: '', name: '', unit: '', direction: 'higher_better', weight: '5', yearly_target: '', monthly_target: '', weekly_target: '', description: '', base_month: '' })
+      setKpiForm({ team_id: '', name: '', unit: '', direction: 'higher_better', weight: '5', yearly_target: '', monthly_target: '', weekly_target: '', description: '', category: '', program: '', base_month: '' })
     }
     setShowKPIModal(true)
   }
@@ -339,15 +346,15 @@ export default function KPIPage() {
       />
 
       {/* 헤더 - 색상 악센트 바 */}
-      <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden mb-8">
+      <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden mb-8">
         <div className="h-1 bg-blue-600"></div>
         <div className="p-5 flex flex-wrap justify-between items-start gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">KPI 관리</h2>
+            <h2 className="text-2xl font-bold text-white mb-1">KPI 관리</h2>
             <p className="text-gray-400 text-sm">팀과 KPI 항목을 관리합니다</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={fetchData} className="flex items-center gap-2 px-4 py-2.5 text-gray-600 border-2 border-gray-300 rounded-xl hover:bg-gray-50 text-sm font-medium transition">
+            <button onClick={fetchData} className="flex items-center gap-2 px-4 py-2.5 text-gray-300 border-2 border-gray-700 rounded-xl hover:bg-gray-700 text-sm font-medium transition">
               <RefreshCw className="w-4 h-4" /> 새로고침
             </button>
             <button onClick={() => openTeamModal()} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl hover:bg-slate-800 text-sm font-medium transition">
@@ -376,12 +383,12 @@ export default function KPIPage() {
       ) : (
         <div className="space-y-8">
           {/* 팀 선택 버튼 - 색상 악센트 바 */}
-          <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+          <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
             <div className="h-1 bg-indigo-500"></div>
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-gray-700">팀 선택</h3>
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{teams.length}개 팀</span>
+                <h3 className="text-sm font-bold text-gray-300">팀 선택</h3>
+                <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-full">{teams.length}개 팀</span>
               </div>
               <div className="flex flex-wrap gap-3">
                 {teams.map(team => {
@@ -394,13 +401,13 @@ export default function KPIPage() {
                       className={`flex flex-col items-start px-5 py-3 rounded-xl text-sm font-medium transition-all ${
                         isSelected
                           ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-[1.02]'
-                          : 'bg-white text-gray-600 border-2 border-gray-300 hover:border-blue-300 hover:bg-blue-50 hover:shadow'
+                          : 'bg-gray-900 text-gray-300 border-2 border-gray-700 hover:border-blue-700 hover:bg-blue-900/20 hover:shadow'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{team.name}</span>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          isSelected ? 'bg-blue-500 text-blue-100' : 'bg-gray-100 text-gray-500'
+                          isSelected ? 'bg-blue-900/200 text-blue-100' : 'bg-gray-800 text-gray-400'
                         }`}>
                           {teamActiveKpis}
                         </span>
@@ -424,43 +431,43 @@ export default function KPIPage() {
             const teamKpis = filteredKpis.filter(k => k.team_id === selectedTeamId)
 
             return (
-              <div className="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden">
+              <div className="bg-gray-900 rounded-xl shadow border-2 border-gray-700 overflow-hidden">
                 {/* 파란 악센트 바 */}
                 <div className="h-1 bg-blue-600"></div>
 
                 {/* 팀 헤더 */}
-                <div className="px-5 py-4 bg-gray-100 flex items-center justify-between">
+                <div className="px-5 py-4 bg-gray-800 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold text-gray-900">{selectedTeam.name}</h3>
-                    <span className="text-sm text-gray-500">
+                    <h3 className="text-lg font-bold text-white">{selectedTeam.name}</h3>
+                    <span className="text-sm text-gray-400">
                       팀장: {selectedTeam.leader || '-'}
                       {selectedTeam.sub_leader && ` / 부팀장: ${selectedTeam.sub_leader}`}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openTeamModal(selectedTeam)} className="text-blue-600 hover:bg-blue-100 p-2 rounded-xl transition" title="팀 수정">
+                    <button onClick={() => openTeamModal(selectedTeam)} className="text-blue-600 hover:bg-blue-900/30 p-2 rounded-xl transition" title="팀 수정">
                       <Edit2 className="w-5 h-5" />
                     </button>
-                    <button onClick={() => setDeleteConfirm({ type: 'team', id: selectedTeam.id, name: selectedTeam.name })} className="text-red-600 hover:bg-red-100 p-2 rounded-xl transition" title="팀 삭제">
+                    <button onClick={() => setDeleteConfirm({ type: 'team', id: selectedTeam.id, name: selectedTeam.name })} className="text-red-600 hover:bg-red-900/30 p-2 rounded-xl transition" title="팀 삭제">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
 
                 {/* 활성/완료 탭 - 필(pill) 스타일 */}
-                <div className="px-5 py-3 border-b border-gray-200 flex gap-2">
+                <div className="px-5 py-3 border-b border-gray-700 flex gap-2">
                   <button
                     onClick={() => setViewMode('active')}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
                       viewMode === 'active'
                         ? 'bg-blue-600 text-white shadow'
-                        : 'text-gray-500 bg-gray-100 hover:bg-gray-200'
+                        : 'text-gray-400 bg-gray-800 hover:bg-gray-700'
                     }`}
                   >
                     <Target className="w-4 h-4" />
                     활성
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      viewMode === 'active' ? 'bg-blue-500 text-blue-100' : 'bg-gray-200 text-gray-600'
+                      viewMode === 'active' ? 'bg-blue-900/200 text-blue-100' : 'bg-gray-700 text-gray-300'
                     }`}>
                       {kpis.filter(k => k.team_id === selectedTeamId && k.status === 'active').length}
                     </span>
@@ -470,13 +477,13 @@ export default function KPIPage() {
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
                       viewMode === 'completed'
                         ? 'bg-gray-700 text-white shadow'
-                        : 'text-gray-500 bg-gray-100 hover:bg-gray-200'
+                        : 'text-gray-400 bg-gray-800 hover:bg-gray-700'
                     }`}
                   >
                     <CheckCircle className="w-4 h-4" />
                     완료
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      viewMode === 'completed' ? 'bg-gray-600 text-gray-100' : 'bg-gray-200 text-gray-600'
+                      viewMode === 'completed' ? 'bg-gray-600 text-gray-100' : 'bg-gray-700 text-gray-300'
                     }`}>
                       {kpis.filter(k => k.team_id === selectedTeamId && k.status === 'completed').length}
                     </span>
@@ -485,30 +492,49 @@ export default function KPIPage() {
 
                 {/* KPI 목록 */}
                 {teamKpis.length > 0 ? (
-                  <div className="divide-y divide-gray-300">
-                    {teamKpis.map(kpi => {
+                  <div>
+                    {(() => {
+                      const groups = groupKpisByCategoryProgram(teamKpis)
+                      let lastCategory: string | null | undefined = undefined
+                      return groups.map((group, gi) => {
+                        const showCategoryHeader = group.category && group.category !== lastCategory
+                        if (group.category) lastCategory = group.category
+                        return (
+                          <div key={gi}>
+                            {showCategoryHeader && (
+                              <div className="px-5 py-2.5 bg-gray-800/70 border-b border-gray-700">
+                                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">{group.category}</span>
+                              </div>
+                            )}
+                            {group.program && (
+                              <div className="px-5 py-2 bg-gray-800/40 border-b border-gray-700 pl-8">
+                                <span className="text-xs font-semibold text-gray-400">{group.program}</span>
+                              </div>
+                            )}
+                            <div className="divide-y divide-gray-700">
+                    {group.kpis.map(kpi => {
                       const goalCount = kpiGoals.filter(g => g.kpi_id === kpi.id).length
                       const elapsed = getElapsedText(kpi.base_month)
                       const isCompleted = kpi.status === 'completed'
 
                       return (
-                        <div key={kpi.id} className={`px-5 py-4 hover:bg-gray-50 transition border-l-4 ${
-                          isCompleted ? 'border-l-gray-300 bg-gray-50/50 opacity-60' : 'border-l-blue-600'
+                        <div key={kpi.id} className={`px-5 py-4 hover:bg-gray-700 transition border-l-4 ${
+                          isCompleted ? 'border-l-gray-300 bg-gray-800/50/50 opacity-60' : 'border-l-blue-600'
                         }`}>
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1.5">
-                                <span className={`font-semibold text-sm ${isCompleted ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{kpi.name}</span>
+                                <span className={`font-semibold text-sm ${isCompleted ? 'text-gray-400 line-through' : 'text-white'}`}>{kpi.name}</span>
                                 {kpi.unit && (
-                                  <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-lg font-medium">{kpi.unit}</span>
+                                  <span className="text-xs bg-blue-900/30 text-blue-600 px-2 py-0.5 rounded-lg font-medium">{kpi.unit}</span>
                                 )}
                                 {kpi.direction === 'lower_better' ? (
                                   <span className="text-xs bg-sky-100 text-sky-600 px-1.5 py-0.5 rounded-lg font-bold" title="낮을수록 좋음">&#8595;</span>
                                 ) : (
-                                  <span className="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded-lg font-bold" title="높을수록 좋음">&#8593;</span>
+                                  <span className="text-xs bg-green-900/30 text-green-600 px-1.5 py-0.5 rounded-lg font-bold" title="높을수록 좋음">&#8593;</span>
                                 )}
                                 {isCompleted && (
-                                  <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">완료</span>
+                                  <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full font-medium">완료</span>
                                 )}
                               </div>
                               <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
@@ -534,20 +560,20 @@ export default function KPIPage() {
                                 onClick={() => handleToggleStatus(kpi)}
                                 className={`p-2 rounded-xl transition ${
                                   kpi.status === 'active'
-                                    ? 'text-green-600 hover:bg-green-50'
-                                    : 'text-blue-600 hover:bg-blue-50'
+                                    ? 'text-green-600 hover:bg-green-900/20'
+                                    : 'text-blue-600 hover:bg-blue-900/20'
                                 }`}
                                 title={kpi.status === 'active' ? '완료 처리' : '다시 활성화'}
                               >
                                 <CheckCircle className="w-5 h-5" />
                               </button>
-                              <button onClick={() => openGoalModal(kpi)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-xl transition" title="월별 목표">
+                              <button onClick={() => openGoalModal(kpi)} className="text-blue-600 hover:bg-blue-900/20 p-2 rounded-xl transition" title="월별 목표">
                                 <Calendar className="w-5 h-5" />
                               </button>
-                              <button onClick={() => openKPIModal(kpi)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-xl transition" title="수정">
+                              <button onClick={() => openKPIModal(kpi)} className="text-blue-600 hover:bg-blue-900/20 p-2 rounded-xl transition" title="수정">
                                 <Edit2 className="w-5 h-5" />
                               </button>
-                              <button onClick={() => setDeleteConfirm({ type: 'kpi', id: kpi.id, name: kpi.name })} className="text-red-600 hover:bg-red-50 p-2 rounded-xl transition" title="삭제">
+                              <button onClick={() => setDeleteConfirm({ type: 'kpi', id: kpi.id, name: kpi.name })} className="text-red-600 hover:bg-red-900/20 p-2 rounded-xl transition" title="삭제">
                                 <Trash2 className="w-5 h-5" />
                               </button>
                             </div>
@@ -555,13 +581,18 @@ export default function KPIPage() {
                         </div>
                       )
                     })}
+                            </div>
+                          </div>
+                        )
+                      })
+                    })()}
                   </div>
                 ) : (
                   <div className="p-16 text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl mb-4">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl mb-4">
                       <Target className="w-10 h-10 text-gray-300" />
                     </div>
-                    <p className="text-gray-500 text-base mb-2 font-medium">
+                    <p className="text-gray-400 text-base mb-2 font-medium">
                       {viewMode === 'active' ? '등록된 활성 KPI가 없습니다' : '완료된 KPI가 없습니다'}
                     </p>
                     <p className="text-gray-400 text-sm mb-6">
@@ -586,35 +617,35 @@ export default function KPIPage() {
       {/* 팀 Modal */}
       {showTeamModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md overflow-hidden">
+          <div className="bg-gray-900 rounded-xl w-full max-w-md overflow-hidden">
             <div className="h-1 bg-blue-600"></div>
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900">{editingTeam ? '팀 수정' : '팀 추가'}</h3>
-                <button onClick={() => setShowTeamModal(false)} className="text-gray-400 hover:text-gray-600 transition"><X className="w-5 h-5" /></button>
+                <h3 className="text-lg font-bold text-white">{editingTeam ? '팀 수정' : '팀 추가'}</h3>
+                <button onClick={() => setShowTeamModal(false)} className="text-gray-400 hover:text-gray-300 transition"><X className="w-5 h-5" /></button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">팀명 <span className="text-red-600">*</span></label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">팀명 <span className="text-red-600">*</span></label>
                   <input type="text" value={teamForm.name} onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
-                    className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 마케팅팀" />
+                    className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 마케팅팀" />
                 </div>
-                <div className="border-t border-gray-200 pt-4">
+                <div className="border-t border-gray-700 pt-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">팀장</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">팀장</label>
                       <input type="text" value={teamForm.leader} onChange={(e) => setTeamForm({ ...teamForm, leader: e.target.value })}
-                        className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 김철수" />
+                        className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 김철수" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">부팀장</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">부팀장</label>
                       <input type="text" value={teamForm.sub_leader} onChange={(e) => setTeamForm({ ...teamForm, sub_leader: e.target.value })}
-                        className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 박영희" />
+                        className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 박영희" />
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3 justify-end pt-3 border-t border-gray-200">
-                  <button onClick={() => setShowTeamModal(false)} className="px-4 py-2 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition">취소</button>
+                <div className="flex gap-3 justify-end pt-3 border-t border-gray-700">
+                  <button onClick={() => setShowTeamModal(false)} className="px-4 py-2 border-2 border-gray-700 rounded-xl hover:bg-gray-700 transition">취소</button>
                   <button onClick={handleSaveTeam} className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2 transition">
                     <Save className="w-4 h-4" /> 저장
                   </button>
@@ -628,34 +659,68 @@ export default function KPIPage() {
       {/* KPI Modal */}
       {showKPIModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="bg-gray-900 rounded-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
             <div className="h-1 bg-blue-600 flex-shrink-0"></div>
             <div className="p-6 overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900">{editingKPI ? 'KPI 수정' : 'KPI 추가'}</h3>
-                <button onClick={() => setShowKPIModal(false)} className="text-gray-400 hover:text-gray-600 transition"><X className="w-5 h-5" /></button>
+                <h3 className="text-lg font-bold text-white">{editingKPI ? 'KPI 수정' : 'KPI 추가'}</h3>
+                <button onClick={() => setShowKPIModal(false)} className="text-gray-400 hover:text-gray-300 transition"><X className="w-5 h-5" /></button>
               </div>
               <div className="space-y-4">
                 {/* 기본 정보 */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">팀 <span className="text-red-600">*</span></label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">팀 <span className="text-red-600">*</span></label>
                   <select value={kpiForm.team_id} onChange={(e) => setKpiForm({ ...kpiForm, team_id: e.target.value })}
-                    className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                    className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="">팀 선택</option>
                     {teams.map((team) => (
                       <option key={team.id} value={team.id}>{team.name}</option>
                     ))}
                   </select>
                 </div>
+                {/* 분류 (카테고리/프로그램) */}
+                <div className="border-t border-gray-700 pt-4">
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">분류</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">카테고리</label>
+                      <input type="text" value={kpiForm.category}
+                        onChange={(e) => setKpiForm({ ...kpiForm, category: e.target.value })}
+                        className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="예: 개별 프로그램 성과"
+                        list="category-suggestions" />
+                      <datalist id="category-suggestions">
+                        {[...new Set(kpis.filter(k => k.team_id === kpiForm.team_id && k.category).map(k => k.category))].map(c => (
+                          <option key={c} value={c!} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">프로그램</label>
+                      <input type="text" value={kpiForm.program}
+                        onChange={(e) => setKpiForm({ ...kpiForm, program: e.target.value })}
+                        className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="예: 상품 자동 추천 (선택사항)"
+                        list="program-suggestions" />
+                      <datalist id="program-suggestions">
+                        {[...new Set(kpis.filter(k => k.team_id === kpiForm.team_id && k.category === kpiForm.category && k.program).map(k => k.program))].map(p => (
+                          <option key={p} value={p!} />
+                        ))}
+                      </datalist>
+                      <p className="text-xs text-gray-400 mt-1">카테고리 안에서 세분화할 때 입력하세요</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">KPI명 <span className="text-red-600">*</span></label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">KPI명 <span className="text-red-600">*</span></label>
                   <input type="text" value={kpiForm.name} onChange={(e) => setKpiForm({ ...kpiForm, name: e.target.value })}
-                    className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 매출액" />
+                    className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 매출액" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">단위 <span className="text-red-600">*</span></label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">단위 <span className="text-red-600">*</span></label>
                   <select value={kpiForm.unit} onChange={(e) => setKpiForm({ ...kpiForm, unit: e.target.value })}
-                    className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                    className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="">단위 선택</option>
                     <option value="원">원 (&#8361;)</option>
                     <option value="퍼센트">퍼센트 (%)</option>
@@ -671,15 +736,15 @@ export default function KPIPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">방향성 <span className="text-red-600">*</span></label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">방향성 <span className="text-red-600">*</span></label>
                   <select value={kpiForm.direction} onChange={(e) => setKpiForm({ ...kpiForm, direction: e.target.value as 'higher_better' | 'lower_better' })}
-                    className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                    className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="higher_better">높을수록 좋음 (매출, 전환률 등)</option>
                     <option value="lower_better">낮을수록 좋음 (불량률, 환불률 등)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">가중치 (1-10) <span className="text-red-600">*</span></label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">가중치 (1-10) <span className="text-red-600">*</span></label>
                   <div className="flex items-center gap-3">
                     <input type="range" min="1" max="10" value={kpiForm.weight} onChange={(e) => setKpiForm({ ...kpiForm, weight: e.target.value })}
                       className="flex-1" />
@@ -689,56 +754,56 @@ export default function KPIPage() {
                 </div>
 
                 {/* 목표 설정 */}
-                <div className="border-t border-gray-200 pt-4">
+                <div className="border-t border-gray-700 pt-4">
                   <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">목표 설정</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">연간목표</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">연간목표</label>
                       <input type="number" value={kpiForm.yearly_target} onChange={(e) => setKpiForm({ ...kpiForm, yearly_target: e.target.value })}
-                        className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 1200 (연간 총 목표)" />
+                        className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 1200 (연간 총 목표)" />
                       <p className="text-xs text-gray-400 mt-1">1년간 달성할 총 목표 수치를 입력하세요</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">기본 월간목표</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">기본 월간목표</label>
                         <input type="number" value={kpiForm.monthly_target} onChange={(e) => setKpiForm({ ...kpiForm, monthly_target: e.target.value })}
-                          className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                           placeholder={kpiForm.yearly_target ? `연간의 1/12 = ${(parseFloat(kpiForm.yearly_target) / 12).toFixed(0)}` : ''} />
                       </div>
                       {kpiForm.yearly_target && kpiForm.monthly_target && (
                         Math.abs(parseFloat(kpiForm.yearly_target) / 12 - parseFloat(kpiForm.monthly_target)) > parseFloat(kpiForm.monthly_target) * 0.3 && (
-                          <p className="text-amber-600 text-xs mt-1 col-span-2">&#9888; 월간목표({kpiForm.monthly_target})가 연간목표의 1/12({(parseFloat(kpiForm.yearly_target)/12).toFixed(0)})과 30% 이상 차이납니다</p>
+                          <p className="text-amber-400 text-xs mt-1 col-span-2">&#9888; 월간목표({kpiForm.monthly_target})가 연간목표의 1/12({(parseFloat(kpiForm.yearly_target)/12).toFixed(0)})과 30% 이상 차이납니다</p>
                         )
                       )}
                       <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">기본 주간목표</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">기본 주간목표</label>
                         <input type="number" value={kpiForm.weekly_target} onChange={(e) => setKpiForm({ ...kpiForm, weekly_target: e.target.value })}
-                          className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                          className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* 추가 정보 */}
-                <div className="border-t border-gray-200 pt-4">
+                <div className="border-t border-gray-700 pt-4">
                   <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">추가 정보</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">시작월 (KPI 측정 시작)</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">시작월 (KPI 측정 시작)</label>
                       <input type="month" value={kpiForm.base_month} onChange={(e) => setKpiForm({ ...kpiForm, base_month: e.target.value })}
-                        className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                        className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                       <p className="text-xs text-gray-400 mt-1">KPI 측정을 시작한 월을 선택하세요</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">상세설명</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">상세설명</label>
                       <textarea value={kpiForm.description} onChange={(e) => setKpiForm({ ...kpiForm, description: e.target.value })}
-                        className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" rows={2} />
+                        className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" rows={2} />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-3 justify-end pt-3 border-t border-gray-200">
-                  <button onClick={() => setShowKPIModal(false)} className="px-4 py-2 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition">취소</button>
+                <div className="flex gap-3 justify-end pt-3 border-t border-gray-700">
+                  <button onClick={() => setShowKPIModal(false)} className="px-4 py-2 border-2 border-gray-700 rounded-xl hover:bg-gray-700 transition">취소</button>
                   <button onClick={handleSaveKPI} className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2 transition">
                     <Save className="w-4 h-4" /> 저장
                   </button>
@@ -752,30 +817,30 @@ export default function KPIPage() {
       {/* 월별 목표 Modal */}
       {showGoalModal && goalKPI && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="bg-gray-900 rounded-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
             <div className="h-1 bg-blue-600 flex-shrink-0"></div>
             <div className="p-6 overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">월별 목표 설정</h3>
+                  <h3 className="text-lg font-bold text-white">월별 목표 설정</h3>
                   <p className="text-sm text-gray-400">{goalKPI.team_name} &gt; {goalKPI.name}</p>
                 </div>
-                <button onClick={() => setShowGoalModal(false)} className="text-gray-400 hover:text-gray-600 transition"><X className="w-5 h-5" /></button>
+                <button onClick={() => setShowGoalModal(false)} className="text-gray-400 hover:text-gray-300 transition"><X className="w-5 h-5" /></button>
               </div>
 
               {goalsByKPI.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">설정된 목표</h4>
-                  <div className="divide-y divide-gray-100 border-2 border-gray-300 rounded-xl overflow-hidden">
+                  <h4 className="text-sm font-medium text-gray-300 mb-2">설정된 목표</h4>
+                  <div className="divide-y divide-gray-700 border-2 border-gray-700 rounded-xl overflow-hidden">
                     {goalsByKPI.map((goal) => (
-                      <div key={goal.id} className="flex justify-between items-center px-4 py-3 text-sm bg-white hover:bg-gray-50 transition">
+                      <div key={goal.id} className="flex justify-between items-center px-4 py-3 text-sm bg-gray-900 hover:bg-gray-700 transition">
                         <div>
-                          <span className="font-medium text-gray-900">{goal.goal_month}</span>
+                          <span className="font-medium text-white">{goal.goal_month}</span>
                           <span className="text-gray-400 ml-3">월간: {goal.monthly_target?.toLocaleString() ?? '-'}</span>
                           <span className="text-gray-400 ml-3">주간: {goal.weekly_target?.toLocaleString() ?? '-'}</span>
                         </div>
                         <button onClick={() => setDeleteConfirm({ type: 'goal', id: goal.id, name: goal.goal_month })}
-                          className="text-red-600 hover:bg-red-50 p-2 rounded-xl transition">
+                          className="text-red-600 hover:bg-red-900/20 p-2 rounded-xl transition">
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
@@ -784,24 +849,24 @@ export default function KPIPage() {
                 </div>
               )}
 
-              <div className="border-t border-gray-200 pt-4 space-y-3">
-                <h4 className="text-sm font-medium text-gray-600">새 월별 목표 추가</h4>
+              <div className="border-t border-gray-700 pt-4 space-y-3">
+                <h4 className="text-sm font-medium text-gray-300">새 월별 목표 추가</h4>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">대상 월 <span className="text-red-600">*</span></label>
+                  <label className="block text-sm text-gray-300 mb-1">대상 월 <span className="text-red-600">*</span></label>
                   <input type="month" value={goalForm.goal_month} onChange={(e) => setGoalForm({ ...goalForm, goal_month: e.target.value })}
-                    className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                    className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">월간목표</label>
+                    <label className="block text-sm text-gray-300 mb-1">월간목표</label>
                     <input type="number" value={goalForm.monthly_target} onChange={(e) => setGoalForm({ ...goalForm, monthly_target: e.target.value })}
-                      className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                       placeholder={goalKPI.monthly_target?.toString() || ''} />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">주간목표</label>
+                    <label className="block text-sm text-gray-300 mb-1">주간목표</label>
                     <input type="number" value={goalForm.weekly_target} onChange={(e) => setGoalForm({ ...goalForm, weekly_target: e.target.value })}
-                      className="w-full border-2 border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border-2 border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                       placeholder={goalKPI.weekly_target?.toString() || ''} />
                   </div>
                 </div>
@@ -811,8 +876,8 @@ export default function KPIPage() {
                 </button>
               </div>
 
-              <div className="flex justify-end pt-4 mt-4 border-t border-gray-200">
-                <button onClick={() => setShowGoalModal(false)} className="px-4 py-2 border-2 border-gray-300 rounded-xl hover:bg-gray-50 text-sm transition">닫기</button>
+              <div className="flex justify-end pt-4 mt-4 border-t border-gray-700">
+                <button onClick={() => setShowGoalModal(false)} className="px-4 py-2 border-2 border-gray-700 rounded-xl hover:bg-gray-700 text-sm transition">닫기</button>
               </div>
             </div>
           </div>
